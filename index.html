@@ -421,7 +421,7 @@ body:not(.mapmode) .clouds{display:none}
 .pin .lbl{position:absolute;top:calc(50% + 10px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11.5px;font-weight:700;color:#fff;background:rgba(8,14,30,.72);padding:2px 7px;border-radius:6px;font-family:var(--f-body);opacity:0;transition:opacity .3s;pointer-events:none}
 .pin .tag{position:absolute;bottom:calc(50% + 10px);left:50%;transform:translateX(-50%) translateY(4px);margin:0;background:#FFC37A;color:#2A1404;font-family:var(--f-display);font-weight:700;font-size:12.5px;padding:2px 8px;border-radius:7px;white-space:nowrap;opacity:0;transition:transform .35s var(--ease),opacity .3s;box-shadow:0 2px 6px rgba(0,0,0,.5)}
 .pin.show .lbl{opacity:1}
-.pin.drop .in{animation:pindrop .5s var(--ease) both;animation-delay:inherit}
+.pin.pdrop .in{animation:pindrop .5s var(--ease) both;animation-delay:inherit}
 @keyframes pindrop{0%{transform:translateY(-14px);opacity:0}100%{transform:none;opacity:1}}
 .pin.dimmed{opacity:.28}
 .pin.dimmed .lbl{opacity:0}
@@ -852,8 +852,11 @@ var MapCtl = window.__mapctl = {
   fly: function (opt, cb) {
     var self = this, m = this.map;
     this.stopSpin(); this.fx('vig', (opt.duration || 2000) + 600);
-    m.stop(); m.flyTo(Object.assign({ padding: this.pad(), essential: true, curve: 1.5 }, opt));
-    if (cb) m.once('moveend', cb);
+    var tok = this.tok = (this.tok || 0) + 1;
+    m.stop();
+    m.flyTo(Object.assign({ padding: this.pad(), essential: true, curve: 1.5 }, opt));
+    // only the latest flight may run its finishing step (an interrupted flight also fires moveend)
+    if (cb) m.once('moveend', function () { if (self.tok === tok) cb(); });
   },
   flyBounds: function (pts, opt, cb) {
     // own fit: MapLibre's cameraForBounds adds the map's stored padding and can return nothing on small phones
@@ -882,7 +885,7 @@ var MapCtl = window.__mapctl = {
     list.forEach(function (s, i) {
       seen[s.id] = true; var m = self.shops[s.id];
       if (!m) { m = self.marker(self.pinHTML(s), 'pin', [s.lng, s.lat]); m._s = s; self.shops[s.id] = m; }
-      if (v && !m._on) { self.on(m, true); var e = m.getElement(); e.classList.add('drop'); e.style.animationDelay = (i * 90) + 'ms'; setTimeout(function () { e.classList.add('show'); }, 400 + i * 90); }
+      if (v && !m._on) { self.on(m, true); var e = m.getElement(); e.classList.add('pdrop'); e.style.animationDelay = (i * 90) + 'ms'; setTimeout(function () { e.classList.add('show'); }, 400 + i * 90); }
       else if (!v) self.on(m, false);
     });
     Object.keys(this.shops).forEach(function (id) { if (!seen[id]) self.on(self.shops[id], false); });
