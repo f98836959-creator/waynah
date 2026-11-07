@@ -626,9 +626,9 @@ body.mapmode .pushon{color:#7BD9A2}
   var goal = 8, shown = 0, fin = false, gone = false, t0 = Date.now();
   var capT = setInterval(function () { cap.style.opacity = 0; setTimeout(function () { ci = (ci + 1) % caps.length; cap.textContent = caps[ci]; cap.style.opacity = 1; }, 200); }, 1700);
   var vid = document.getElementById('sp-vid'), stage = document.getElementById('sp-stage');
-  function shown() { if (stage) stage.classList.add('vid'); }
-  function kick() { if (!vid) return; vid.muted = true; vid.defaultMuted = true; try { var pp = vid.play(); if (pp && pp.then) pp.then(shown, function () {}); } catch (e) {} }
-  if (vid) { vid.addEventListener('playing', shown); vid.addEventListener('timeupdate', function () { if (vid.currentTime > 0.05) shown(); }); kick(); if (vid.readyState < 2) vid.addEventListener('loadeddata', kick, { once: true }); }
+  function reveal() { if (stage) stage.classList.add('vid'); }
+  function kick() { if (!vid) return; vid.muted = true; vid.defaultMuted = true; try { var pp = vid.play(); if (pp && pp.then) pp.then(reveal, function () {}); } catch (e) {} }
+  if (vid) { vid.addEventListener('playing', reveal); vid.addEventListener('timeupdate', function () { if (vid.currentTime > 0.05) reveal(); }); kick(); if (vid.readyState < 2) vid.addEventListener('loadeddata', kick, { once: true }); }
   ['touchstart', 'pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function () { if (vid && vid.paused && !gone) kick(); }, { once: true, passive: true }); });
   // warm the satellite tiles of the opening view while the app boots, so the map appears already drawn
   try { var T = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/', warm = function (z, x0, x1, y0, y1) { for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) fetch(T + z + '/' + y + '/' + x, { mode: 'cors', credentials: 'same-origin' }).catch(function () {}); };
