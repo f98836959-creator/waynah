@@ -358,9 +358,9 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 .leaflet-control-attribution a{color:#b9c2da!important}
 .tint{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,transparent 35%,rgba(6,11,24,.55) 100%),linear-gradient(180deg,rgba(6,11,24,.55),transparent 30%,transparent 60%,rgba(6,11,24,.75))}
 .clouds{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 2.2s}
-.clouds.on{opacity:.55}.clouds.thin{opacity:.14}
-.clouds i{position:absolute;inset:-50% -100% -50% 0;background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/mascot/clouds.webp);background-size:900px 900px;background-repeat:repeat;mix-blend-mode:screen;animation:cloud 160s linear infinite;will-change:transform}
-.clouds i:nth-child(2){background-size:1400px 1400px;opacity:.6;animation-duration:260s;animation-direction:reverse;filter:blur(1px)}
+.clouds.on{opacity:.3}.clouds.thin{opacity:.1}
+.clouds i{position:absolute;inset:-50% -100% -50% 0;background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/mascot/clouds.webp);background-size:900px 900px;background-repeat:repeat;mix-blend-mode:screen;filter:blur(1.5px) brightness(1.1);animation:cloud 160s linear infinite;will-change:transform}
+.clouds i:nth-child(2){background-size:1400px 1400px;opacity:.5;animation-duration:260s;animation-direction:reverse;filter:blur(3px)}
 @keyframes cloud{from{transform:translate3d(0,0,0)}to{transform:translate3d(-900px,120px,0)}}
 body:not(.mapmode) .clouds{display:none}
 #fx{position:fixed;inset:0;z-index:35;pointer-events:none;overflow:hidden}
@@ -1115,7 +1115,7 @@ function render() {
   }
   var ch = $('.chat');
   if (ch) { var n = ch.children.length; if (n > lastChat && lastChat > 0 && ch.lastElementChild) ch.lastElementChild.classList.add('fresh'); lastChat = n; } else lastChat = 0;
-  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.invalidateSize(); Buddy.init(); Buddy.show(true); MapCtl.update(); } else { Buddy.show(false); Stage.update(r); }
+  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.invalidateSize(); Buddy.init(); Buddy.show(!(S.d.sheet || S.d.picker)); MapCtl.update(); } else { Buddy.show(false); Stage.update(r); }
   document.body._wasMap = mapmode;
   document.body.style.paddingBottom = '';
   if (aid) { var n = document.getElementById(aid); if (n) { n.focus({ preventScroll: true }); try { if (ss != null) n.setSelectionRange(ss, se); } catch (e) {} } }
