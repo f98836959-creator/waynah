@@ -1,0 +1,959 @@
+<title>مقر وينه</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a 3D isometric office fills the screen (eight team rooms around the shared brain); the top bar switches views, a side panel opens for a team, a person, the task board, the calendar or the brain, and the command dock talks to Rashid. One committed night look. */
+:root{
+  color-scheme:dark;
+  --bg:#090E1F; --glass:rgba(13,19,40,.86); --card:#121A35; --card-2:#18224A;
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.15);
+  --fg:#F2EEE6; --muted:#A3ADC8; --dim:#6E7893;
+  --caramel:#F29B3F; --caramel-2:#FFC37A; --cyan:#7FE7FF;
+  --good:#3DD68C; --warn:#FFB347; --bad:#FF6B5B; --review:#B18CFF;
+  --display:'Readex Pro','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic','Readex Pro',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button,textarea,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--caramel-2);outline-offset:2px;border-radius:8px}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;white-space:nowrap;will-change:transform}
+.rlab{display:flex;align-items:center;gap:7px;background:rgba(10,15,32,.86);border:1px solid var(--line-2);border-radius:10px;padding:4px 9px 4px 7px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:12px}
+.rlab .ic{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;flex:none}
+.rlab .ic svg{width:13px;height:13px}
+.rlab b{font-family:var(--display);font-weight:600;font-size:12.5px}
+.rlab small{display:block;color:var(--muted);font-size:10.5px;line-height:1.2}
+.rlab .dotr{width:6px;height:6px;border-radius:50%;background:var(--good);display:inline-block;margin-inline-end:4px}
+.rlab .dotr.off{background:#5B6684}
+.rlab.hot{border-color:rgba(255,195,122,.6);box-shadow:0 0 0 3px rgba(242,155,63,.18),0 8px 24px rgba(0,0,0,.35)}
+.blab{text-align:center;background:rgba(10,15,32,.82);border:1px solid rgba(127,231,255,.35);border-radius:10px;padding:4px 10px;font-size:11px;color:#CFF6FF}
+.blab b{display:block;font-family:var(--display);font-size:12px;color:#fff}
+.plab{font-size:11px;background:rgba(10,15,32,.85);border:1px solid var(--line-2);border-radius:999px;padding:2px 9px;visibility:hidden}
+.plab.on{visibility:visible}
+.plab i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-inline-end:5px;vertical-align:middle}
+.top{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:12px;padding-block:calc(10px + env(safe-area-inset-top,0px)) 10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:linear-gradient(180deg,rgba(9,14,31,.95),rgba(9,14,31,0));pointer-events:none}
+.top>*{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:9px;background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:6px 10px 6px 12px}
+.brand .crest{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--caramel-2),var(--caramel) 55%,#B8591A);display:grid;place-items:center}
+.brand b{font-family:var(--display);font-size:16px}
+.brand small{color:var(--muted);font-size:11px;display:block;line-height:1.1}
+.views{display:flex;gap:2px;background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:4px;margin-inline:auto}
+.views button{border:0;background:none;border-radius:8px;padding:6px 13px;font-weight:600;font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.views button[aria-pressed="true"]{background:rgba(255,255,255,.1);color:var(--fg)}
+.views .n{font-size:10.5px;background:rgba(177,140,255,.25);color:#E3D6FF;border-radius:999px;padding:0 6px;min-width:18px;text-align:center}
+.askany{display:flex;align-items:center;gap:6px;background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:0 10px;height:40px;width:210px}
+.askany input{border:0;background:none;outline:0;width:100%;font-size:13px}
+.askany input::placeholder{color:var(--dim)}
+.live{display:flex;align-items:center;gap:7px;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.3);color:#BFF3D6;border-radius:12px;padding:0 12px;height:40px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--good);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(61,214,140,0)}0%{box-shadow:0 0 0 0 rgba(61,214,140,.6)}}
+.side{position:fixed;z-index:25;top:calc(64px + env(safe-area-inset-top,0px));bottom:16px;right:max(16px,env(safe-area-inset-right,0px));width:400px;background:var(--glass);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--line-2);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.5);display:flex;flex-direction:column;transform:translateX(calc(100% + 40px));transition:transform .35s cubic-bezier(.3,.7,.2,1);overflow:hidden}
+.side.open{transform:none}
+.shead{display:flex;align-items:center;gap:11px;padding:14px 14px 12px 16px;border-bottom:1px solid var(--line)}
+.shead .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none}
+.shead .ic svg{width:20px;height:20px}
+.shead h2{margin:0;font-family:var(--display);font-size:17px;line-height:1.25}
+.shead .sub{color:var(--muted);font-size:12px}
+.x{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:10px;width:34px;height:34px;display:grid;place-items:center;flex:none}
+.sbody{flex:1;overflow-y:auto;min-height:0;padding:14px 16px 18px;display:flex;flex-direction:column;gap:14px;overscroll-behavior:contain}
+.sec h3{margin:0 0 8px;font-family:var(--display);font-size:12px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 10px}
+.stat small{color:var(--muted);font-size:11px;display:block}
+.stat b{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.stat svg{display:block;width:100%;height:18px;margin-top:2px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tool{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
+.tool .tl{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;font-weight:700;flex:none;color:#0B1022}
+.tool b{font-size:12.5px;display:block;line-height:1.2}
+.tool small{font-size:10.5px;color:var(--muted)}
+.tool small.on{color:var(--good)}
+.grow{flex:1;min-width:0}
+.person{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;width:100%;text-align:start}
+.person:hover{border-color:var(--line-2)}
+.av{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:13px;color:#0B1022;position:relative}
+.av.sleep::after{content:"z";position:absolute;top:-6px;left:-4px;font-size:11px;color:#C9D6FF;font-weight:700}
+.person b{font-size:13px}
+.person small{display:block;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lead{font-size:9.5px;font-weight:700;background:rgba(255,195,122,.15);color:var(--caramel-2);border-radius:5px;padding:1px 5px;margin-inline-start:5px;vertical-align:middle}
+.st{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.st.working{background:rgba(255,179,71,.15);color:var(--warn)}
+.st.review{background:rgba(177,140,255,.16);color:var(--review)}
+.st.done{background:rgba(61,214,140,.14);color:var(--good)}
+.st.error,.st.stopped{background:rgba(255,107,91,.14);color:var(--bad)}
+.st.idle{background:rgba(255,255,255,.06);color:var(--dim)}
+.skills{display:flex;flex-direction:column;gap:6px}
+.skill{display:flex;align-items:center;gap:9px;font-size:12.5px}
+.skill .bar{flex:0 0 90px;height:5px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden}
+.skill .bar i{display:block;height:100%;border-radius:5px}
+.skill .pc{font-size:10.5px;color:var(--dim);width:34px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.04)}
+.taste{margin:0;padding-inline-start:18px;color:#D8D2C6;font-size:13px}
+.taste li{margin:3px 0}
+textarea{width:100%;resize:none;background:#0A1024;border:1px solid var(--line-2);border-radius:12px;padding:10px 12px;line-height:1.55;min-height:44px}
+textarea::placeholder{color:var(--dim)}
+.btn{border:1px solid var(--line-2);background:rgba(255,255,255,.06);padding:7px 13px;border-radius:10px;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.1)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-acc{background:linear-gradient(135deg,var(--caramel-2),var(--caramel) 55%,#C8661F);color:#2A1404;border-color:transparent}
+.btn-ok{background:rgba(61,214,140,.16);border-color:rgba(61,214,140,.45);color:#C9F7DE}
+.check{display:flex;gap:7px;align-items:center;font-size:12px;color:var(--muted)}
+.ftabs{display:flex;gap:4px;flex-wrap:wrap}
+.ftabs button{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--muted)}
+.ftabs button[aria-pressed="true"]{color:var(--fg);border-color:var(--line-2);background:var(--card-2)}
+.grp{font-size:11.5px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:7px;margin-top:4px}
+.grp i{width:7px;height:7px;border-radius:50%}
+.task{background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.task>summary{list-style:none;display:flex;gap:10px;align-items:center;padding:9px 11px;cursor:pointer}
+.task>summary::-webkit-details-marker{display:none}
+.task .tt{font-weight:600;font-size:13px;line-height:1.35;display:block}
+.task .meta{font-size:11px;color:var(--dim)}
+.ring{width:26px;height:26px;flex:none}
+.ring circle{fill:none;stroke-width:3}
+.ring .spin{transform-origin:50% 50%;animation:spin 1.1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.task .body{border-top:1px solid var(--line);padding:11px 13px;font-size:13px}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;align-items:center}
+.md h4{font-family:var(--display);font-size:13.5px;margin:10px 0 4px;color:var(--caramel-2)}
+.md p{margin:5px 0}
+.md ul,.md ol{margin:5px 0;padding-inline-start:20px}
+.md li{margin:2px 0}
+.md code{background:rgba(255,255,255,.08);padding:1px 5px;border-radius:5px;font-family:var(--mono);font-size:11.5px}
+.md pre{background:#0A1024;border:1px solid var(--line);border-radius:10px;padding:9px;overflow-x:auto;font-size:11.5px;direction:ltr;text-align:left}
+.md table{border-collapse:collapse;width:100%;font-size:12px;margin:6px 0}
+.md td{border:1px solid var(--line-2);padding:4px 7px;vertical-align:top}
+.md tr:first-child td{background:rgba(255,255,255,.05);font-weight:600}
+.md strong{color:#fff}
+.tw{overflow-x:auto}
+.msg{display:flex;gap:9px;align-items:flex-start}
+.msg.you{flex-direction:row-reverse}
+.bub{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 12px;flex:1}
+.msg.you .bub{background:#1B2A55;border-color:#2C3F78;flex:0 1 auto}
+.bub .who{font-size:11.5px;color:var(--muted);font-weight:600}
+.fix{margin-top:8px;border:1px dashed rgba(255,195,122,.45);background:rgba(242,155,63,.07);border-radius:11px;padding:8px 10px;font-size:12.5px}
+.fix b{color:var(--caramel-2);font-size:11.5px;display:block}
+.fix ul{margin:4px 0 0;padding-inline-start:18px;color:var(--muted)}
+.arow{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:10px;padding:6px 9px;width:100%;text-align:start;margin-top:6px}
+.arow .t{flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.typing{display:inline-flex;gap:4px;align-items:center;color:var(--muted);font-size:12.5px}
+.typing i{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:.25}}
+.empty{color:var(--muted);text-align:center;padding:22px 8px;font-size:13px}
+.empty b{display:block;color:var(--fg);font-family:var(--display);font-size:14.5px;margin-bottom:4px}
+.note{font-size:12px;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:11px;padding:8px 11px}
+.note.warn{color:#FFD9A8;border-color:rgba(255,179,71,.35);background:rgba(255,179,71,.07)}
+.memo{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;font-size:13px;display:flex;gap:8px;align-items:flex-start}
+.memo small{display:block;color:var(--dim);font-size:11px;margin-top:3px}
+.memo .del{background:none;border:0;color:var(--dim);font-size:11.5px;padding:2px 4px;white-space:nowrap}
+.memo .del:hover{color:var(--bad)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.day{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 5px;min-height:118px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.day.today{border-color:rgba(255,195,122,.55)}
+.day h5{margin:0;font-size:10px;color:var(--muted);text-align:center;font-weight:600}
+.day h5 b{display:block;font-family:var(--display);font-size:15px;color:var(--fg)}
+.ev{font-size:10px;line-height:1.3;border-radius:5px;padding:2px 4px;background:rgba(255,255,255,.06);border-inline-start:3px solid var(--c,#888);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev.rt{border-inline-start-style:dashed;opacity:.75}
+.dock{position:fixed;z-index:22;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(620px,calc(100% - 32px));background:var(--glass);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--line-2);border-radius:18px;padding:8px;display:flex;gap:8px;align-items:flex-end;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.orb{width:42px;height:42px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#fff 0%,#C9B6FF 18%,#7C5CFF 48%,#2E1F7A 80%);box-shadow:0 0 22px rgba(124,92,255,.55);border:0}
+.orb.busy{animation:orb 1.4s ease-in-out infinite}
+@keyframes orb{50%{transform:scale(1.08);box-shadow:0 0 34px rgba(127,231,255,.8)}}
+.dock textarea{background:transparent;border:0;outline:0;min-height:42px;max-height:140px;padding:10px 4px}
+.dock .send{height:42px;width:42px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#5B8CFF,#3A5BD9);border:0;flex:none}
+.dock .send:disabled{opacity:.4}
+.dock .who{position:absolute;top:-22px;inset-inline-start:14px;font-size:11px;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:1px 9px}
+.tiers{position:fixed;z-index:21;bottom:calc(22px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));display:flex;gap:4px;background:var(--glass);border:1px solid var(--line);border-radius:11px;padding:4px;font-size:11.5px;align-items:center}
+.tiers span{color:var(--dim);padding:0 6px}
+.tiers button{border:0;background:none;border-radius:7px;padding:4px 9px;color:var(--muted);font-weight:600}
+.tiers button[aria-pressed="true"]{background:rgba(255,255,255,.1);color:var(--fg)}
+.mini{position:fixed;z-index:21;bottom:calc(64px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:6px;display:flex;flex-direction:column;gap:6px}
+.mini canvas{width:168px;height:112px;display:block;border-radius:9px;background:#0B1124;cursor:pointer}
+.mini .zb{display:flex;gap:6px}
+.mini .zb button{flex:1;height:28px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-weight:700}
+.toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translate(-50%,-10px);background:#1C2950;border:1px solid var(--line-2);padding:8px 15px;border-radius:12px;font-size:13px;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.boot{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--bg);transition:opacity .6s}
+.boot.out{opacity:0;pointer-events:none}
+.boot div{text-align:center;color:var(--muted);font-size:13px}
+.boot b{display:block;font-family:var(--display);font-size:22px;color:var(--fg);margin-bottom:6px}
+@media (max-width:820px){
+  .top{flex-wrap:wrap;gap:8px}
+  .brand small,.askany{display:none}
+  .views{order:3;margin:0;width:100%;justify-content:space-between}
+  .views button{padding:6px 7px;font-size:12.5px}
+  .live{height:34px;font-size:11.5px;margin-inline-start:auto}
+  .side{top:auto;left:0;right:0;bottom:0;width:auto;height:72vh;border-radius:20px 20px 0 0;transform:translateY(105%);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .side.open{transform:none}
+  .mini{display:none}
+  .tiers{bottom:auto;top:calc(108px + env(safe-area-inset-top,0px))}
+  .dock{bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+  body.sheet .dock{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<canvas id="gl" aria-label="مكتب وينه ثلاثي الأبعاد: ثمان غرف حول العقل المشترك"></canvas>
+<div id="labels"></div>
+
+<header class="top">
+  <div class="brand"><span class="crest"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2A1404" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg></span><div><b>مقر وينه</b><small>صناعية المعبيلة</small></div></div>
+  <nav class="views" aria-label="العرض">
+    <button type="button" data-view="office" aria-pressed="true">المكتب</button>
+    <button type="button" data-view="tasks" aria-pressed="false">المهام <span class="n" id="n-tasks">0</span></button>
+    <button type="button" data-view="calendar" aria-pressed="false">التقويم</button>
+    <button type="button" data-view="brain" aria-pressed="false">العقل</button>
+    <button type="button" data-view="chief" aria-pressed="false">راشد</button>
+  </nav>
+  <label class="askany"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="find" list="emps" placeholder="ابحث عن موظف أو قسم…" autocomplete="off"><datalist id="emps"></datalist></label>
+  <div class="live"><i></i><span id="live">29 موظف</span></div>
+</header>
+
+<aside class="side" id="side" aria-hidden="true"></aside>
+
+<div class="mini" id="mini"><canvas id="minimap" width="336" height="224" aria-label="الخريطة المصغرة، اضغط تنتقل"></canvas><div class="zb"><button type="button" id="zin" aria-label="تكبير">+</button><button type="button" id="zout" aria-label="تصغير">−</button><button type="button" id="zfit" aria-label="عرض الكل">⤢</button></div></div>
+<div class="tiers" role="group" aria-label="مستوى التفكير"><span>التفكير</span><button type="button" data-tier="quick">سريع</button><button type="button" data-tier="default">متوازن</button><button type="button" data-tier="complex">عميق</button></div>
+
+<form class="dock" id="dock">
+  <span class="who" id="dockwho">راشد يسمعك</span>
+  <button type="button" class="orb" id="orb" aria-label="افتح مكتب راشد"></button>
+  <textarea id="cmd" rows="1" placeholder="قول لراشد وش تبي… (تقدر تستخدم مايك الكيبورد)"></textarea>
+  <button class="send" id="send" type="submit" aria-label="أرسل"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12 4 4l3 8-3 8z"/><path d="M7 12h6"/></svg></button>
+</form>
+<div class="toast" id="toast" role="status"></div>
+<div class="boot" id="boot"><div><b>مقر وينه</b>نجهّز المكتب…</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+'use strict';
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+var now = function () { return Date.now(); };
+var uid = function () { return now().toString(36) + Math.random().toString(36).slice(2, 7); };
+var LS = { get: function (k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+
+/* ================= company knowledge ================= */
+var WAYNAH = [
+  'سياق الشركة (وينه):',
+  '- وينه منصة قطع غيار السيارات لصناعية المعبيلة في مسقط فقط حالياً.',
+  '- السائق يكتب القطعة مرة وحدة، المحلات ترد بعروض أسعار، السائق يقارن ويختار، يتكلم مع المحل داخل التطبيق (رقمه ما يطلع)، يحجز، يستلم من المحل برمز استلام، ويقيّم بعد ما المحل يأكد التسليم.',
+  '- الدخل: اشتراك شهري للمحل 15 ر.ع، وأول شهر مجاني للمحلات المؤسسة. السائق مجاني.',
+  '- المنتج: تطبيق ويب يتثبت على الجوال (waynah-app.vercel.app)، خريطة للمعبيلة، إشعارات مجانية، تحقق برقم الجوال (رسائل SMS الحقيقية مؤجلة لأنها مدفوعة).',
+  '- المرحلة: نموذج أولي شغّال، مشروع مادة ريادة الأعمال والابتكار، الفريق طلاب جامعة في عُمان، والميزانية شبه صفر.',
+  '- المنافسين الفعليين: الاتصال بالمحلات وحدة وحدة، قروبات الواتساب، السوق المفتوح، والزيارة بنفسك للصناعية.',
+  '- العملة ريال عماني (ر.ع). ضريبة القيمة المضافة في عُمان 5%.'
+].join('\n');
+var TASTE = [
+  'قواعد الذوق الإنساني (إلزامية):',
+  '- اكتب كأنك إنسان عماني محترف في فريق وينه، مو كأنك ذكاء اصطناعي.',
+  '- لا تبدأ بمجاملة أو تكرار الطلب ("بالتأكيد"، "سؤال رائع"، "إليك"). ابدأ بالشغل.',
+  '- ممنوع الكليشيهات: "في عالم اليوم المتسارع"، "نقلة نوعية"، "رحلة"، "لا يخفى على أحد"، "في الختام".',
+  '- جمل قصيرة، أرقام وأمثلة محددة من واقع المعبيلة والسوق العماني بدل الكلام العام.',
+  '- أي نص يوصل للناس (إعلان، رسالة، سكربت) يكون باللهجة العمانية/الخليجية الطبيعية. التقارير الداخلية بعربي بسيط.',
+  '- لا إيموجي ولا زخرفة إلا إذا انطلبت.',
+  '- كن صريح: إذا شي ضعيف أو فيه خطر قوله بوضوح مع السبب والبديل.',
+  '- إذا ناقصك معلومة، افترض افتراض معقول واذكره بسطر، وكمّل.',
+  '- اختم بسطر "الخطوة الجاية:" فيه شي واحد ينعمل اليوم.',
+  '- إذا طلع قرار أو معلومة لازم الفريق كله يتذكرها، اكتبها في آخر الرد تحت عنوان "### للذاكرة" كنقاط قصيرة (3 كحد أقصى). إذا ما في، لا تكتب العنوان.'
+].join('\n');
+
+var ICONS = {
+  mkt: '<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M18 6a8 8 0 0 1 0 12"/>',
+  cre: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2 0-1.5-1-2 0-3 .8-.8 2-.5 3-.5A4 4 0 0 0 21 11 9 9 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="11" cy="7" r="1"/><circle cx="15.5" cy="8" r="1"/>',
+  sales: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  sup: '<path d="M4 12a8 8 0 0 1 16 0v4a2 2 0 0 1-2 2h-1v-6h3"/><path d="M4 12v4a2 2 0 0 0 2 2h1v-6H4"/>',
+  ops: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+  fin: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M8 16h2M12 16h2"/>',
+  dev: '<path d="m8 8-5 4 5 4"/><path d="m16 8 5 4-5 4"/><path d="m14 4-4 16"/>',
+  hr: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
+  brain: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+  chief: '<path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2l.9-5.5-4-3.9 5.5-.8z"/>',
+  board: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10M7 17h4"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'
+};
+function svgI(k, c) { return '<svg viewBox="0 0 24 24" fill="none" stroke="' + (c || '#0B1022') + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[k] + '</svg>'; }
+
+var TEAMS = [
+  { id: 'dev', name: 'البرمجة', color: '#2FB36B', tools: [['SB', 'Supabase', 'db'], ['V', 'Vercel', 'vercel'], ['GH', 'GitHub', '']],
+    brief: 'فريق البرمجة: موقع وينه صفحة وحدة HTML/CSS/JavaScript على Vercel مربوط بـ GitHub، قاعدة Supabase (Postgres مع صلاحيات RLS، Edge Functions، Realtime، تخزين صور)، خريطة MapLibre، إشعارات Web Push، تطبيق ويب يتثبت. المؤسس ما يبرمج: اشرح ببساطة وبخطوات مرقمة، ولا تخترع أوامر أو مكتبات غير موجودة.',
+    taste: ['يقيس قبل ما يحكم', 'يشرح لغير المبرمج بخطوات واضحة', 'ما يخترع أوامر غير موجودة'] },
+  { id: 'ops', name: 'العمليات', color: '#F28C38', tools: [['SB', 'Supabase', 'db'], ['WA', 'واتساب', '']],
+    brief: 'فريق العمليات مسؤول إن الخدمة تشتغل كل يوم: تسجيل المحلات والتحقق منها، سرعة الرد على الطلبات، جودة القطع (المقلّد والمستعمل)، الاستلام برمز الاستلام، الشكاوى الكبيرة، المخاطر، والامتثال للأنظمة العمانية (السجل التجاري، حماية المستهلك، خصوصية البيانات).',
+    taste: ['كل إجراء ينفذه شخص جديد بدون ما يسأل', 'يفكر في الحالة اللي تخرب، مو بس المثالية', 'قوائم تحقق قصيرة بدل فقرات'] },
+  { id: 'sales', name: 'المبيعات', color: '#E04848', tools: [['SB', 'Supabase', 'db'], ['WA', 'واتساب', '']],
+    brief: 'فريق المبيعات يقنع محلات قطع الغيار في صناعية المعبيلة بالاشتراك (15 ر.ع شهرياً، أول شهر مجاني). صاحب المحل مشغول، أحياناً وافد يتكلم عربي بسيط أو أوردو أو إنجليزي، ويخاف من الالتزامات. الكلام قصير ومباشر بلهجة عمانية، والهدف إقفال اشتراك.',
+    taste: ['يكتب السكربت مثل ما ينقال في الكراج', 'يحسب كم زيارة تحتاج لاشتراك واحد', 'ما يوعد بشي ما نقدر عليه'] },
+  { id: 'fin', name: 'المالية والمحاسبة', color: '#1FB5A5', tools: [['SB', 'Supabase', 'db'], ['XL', 'جداول', '']],
+    brief: 'الفريق المالي: اقتصاديات المنصة، التسعير والاشتراكات، الميزانية، التدفق النقدي، نقطة التعادل، القوائم المالية بأساسيات IFRS، القيود المحاسبية، والتوقعات لخطة العمل. الريال العماني وضريبة القيمة المضافة 5%. الأرقام في جداول Markdown وكل افتراض مذكور.',
+    taste: ['كل رقم معه مصدره أو افتراضه', 'الجدول قبل الشرح', 'يقول الرقم اللي يخوّف بدون تجميل'] },
+  { id: 'mkt', name: 'التسويق', color: '#E8B931', tools: [['IG', 'إنستقرام', ''], ['TT', 'تيك توك', ''], ['GM', 'قوقل ماب', '']],
+    brief: 'فريق التسويق يجذب السواقين والمحلات لوينه في مسقط: الحملات، المحتوى، السوشال ميديا (إنستقرام، تيك توك، سناب)، الظهور المحلي في قوقل ماب، والإعلانات الممولة بميزانية طلاب. يعرف جمهور الصناعية ويكتب له بلهجته.',
+    taste: ['فكرة وحدة قوية أحسن من عشر باهتة', 'النص جاهز للنشر، مو وصف للنص', 'يكتب باللهجة اللي ينحكى فيها في الصناعية'] },
+  { id: 'cre', name: 'التصميم والإبداع', color: '#7B5CE6', tools: [['HF', 'Higgsfield', ''], ['CV', 'Canva', ''], ['AD', 'Adobe', '']],
+    brief: 'فريق التصميم يصنع الصورة البصرية لوينه: صور وفيديوهات السوشال، الموشن، وواجهات التطبيق. هوية وينه: كحلي ملكي وكراميل محمّص على لون ورقي دافئ، وشخصية تعويذية بكمة عمانية. يسلّم وصف تنفيذي دقيق (Brief) وبرومبتات توليد صور وفيديو جاهزة عند الحاجة.',
+    taste: ['يوصف التصميم لين تقدر تنفذه بدون سؤال', 'ذوق هادي وواقعي، مو طفولي', 'يحترم الهوية: كحلي وكراميل'] },
+  { id: 'sup', name: 'خدمة العملاء', color: '#3B6FE0', tools: [['SB', 'Supabase', 'db'], ['WA', 'واتساب', '']],
+    brief: 'فريق خدمة العملاء يرد على السواقين والمحلات، يحل الشكاوى، يدرّب المحلات على التطبيق، ويبني مركز مساعدة. نبرة محترمة ودافئة وسريعة، ويعرف متى يصعّد للعمليات.',
+    taste: ['يعتذر بجملة وحدة ويحل بالباقي', 'يرد بلغة العميل نفسه', 'كل شكوى تتحول لتحسين'] },
+  { id: 'hr', name: 'الموارد البشرية', color: '#D94FC1', tools: [['CL', 'التقويم', ''], ['DC', 'المستندات', '']],
+    brief: 'فريق الموارد البشرية: الفريق الحالي طلاب جامعة يشتغلون مع دراستهم، ومستقبلاً موظفين ومناديب ميدانيين. توزيع المهام بعدل، التوظيف والمقابلات، التهيئة، تقييم الأداء، ثقافة الفريق، حل الخلافات، والسياسات وفق قانون العمل العماني بشكل عام.',
+    taste: ['يتكلم عن الناس باحترام وبدون لغة شركات باردة', 'حل عملي للخلاف، مو محاضرة', 'يراعي إن الفريق طلاب عندهم دراسة'] }
+];
+var TEAM = {}; TEAMS.forEach(function (t) { TEAM[t.id] = t; });
+var ROSTER = [
+  ['dev', 'dev', 'ثامر', 'm', 'قائد البرمجة', 1, ['هيكلة النظام', 'مراجعة الكود', 'قائمة فحص النشر', 'قرارات تقنية'], 'db vercel'],
+  ['dev2', 'dev', 'زينب', 'f', 'الواجهة الأمامية', 0, ['HTML وCSS وJavaScript', 'سرعة الموقع', 'الجوال واللابتوب', 'إمكانية الوصول'], ''],
+  ['dev3', 'dev', 'فهد', 'm', 'قاعدة البيانات والخادم', 0, ['Supabase وPostgres', 'صلاحيات RLS', 'Edge Functions', 'الإشعارات'], 'db'],
+  ['dev4', 'dev', 'هاجر', 'f', 'الجودة والأمان', 0, ['خطة اختبار', 'تتبّع الأخطاء', 'الأمان والخصوصية', 'مراقبة النشر'], 'vercel'],
+  ['ops', 'ops', 'هلال', 'm', 'قائد العمليات', 1, ['تصميم الإجراءات', 'معايير سرعة الرد', 'تقييم المخاطر', 'تقرير حالة'], 'db'],
+  ['ops2', 'ops', 'بدر', 'm', 'الجودة ومنع الغش', 0, ['كشف القطع المقلّدة', 'التحقق من المحلات', 'سياسة الإرجاع', 'نزاعات الاستلام'], ''],
+  ['ops3', 'ops', 'منى', 'f', 'الإجراءات وأدلة التشغيل', 0, ['دليل تشغيل', 'قوائم تحقق', 'تهيئة محل جديد', 'السجل التجاري والامتثال'], ''],
+  ['ops4', 'ops', 'سيف', 'm', 'بيانات التشغيل', 0, ['استعلامات البيانات', 'مؤشرات يومية', 'الطلبات العالقة', 'تقارير أسبوعية'], 'db'],
+  ['sales', 'sales', 'مازن', 'm', 'قائد المبيعات', 1, ['خطة استقطاب المحلات', 'خط المبيعات', 'توقع أسبوعي', 'عروض المؤسسين'], 'db'],
+  ['sales2', 'sales', 'سعيد', 'm', 'مندوب ميداني', 0, ['سكربت زيارة محل', 'الرد على الاعتراضات', 'عرض التطبيق في دقيقتين', 'عربي وأوردو وإنجليزي بسيط'], ''],
+  ['sales3', 'sales', 'حمد', 'm', 'المتابعة والإقفال', 0, ['رسائل متابعة واتساب', 'إقفال الاشتراك', 'التجديد بعد الشهر المجاني', 'قائمة المتابعة اليومية'], 'db'],
+  ['sales4', 'sales', 'فاطمة', 'f', 'الشراكات', 0, ['شراكات الورش', 'شركات تأجير السيارات', 'التأمين', 'مقترح شراكة من صفحة'], ''],
+  ['fin', 'fin', 'سالم', 'm', 'المدير المالي', 1, ['اقتصاديات الوحدة', 'نقطة التعادل', 'الميزانية والتدفق النقدي', 'توقعات خطة العمل'], 'db'],
+  ['fin2', 'fin', 'ليلى', 'f', 'المحاسبة', 0, ['القيود اليومية', 'القوائم المالية', 'ضريبة القيمة المضافة', 'الفواتير والتحصيل'], ''],
+  ['fin3', 'fin', 'طلال', 'm', 'التسعير والتوقعات', 0, ['نماذج التسعير', 'سيناريوهات النمو', 'تحليل الحساسية', 'مقارنة بالمنافسين'], 'db'],
+  ['mkt', 'mkt', 'ريم', 'f', 'قائدة التسويق', 1, ['خطة حملة كاملة', 'تموضع العلامة', 'تحليل المنافسين', 'تقرير أداء'], 'db'],
+  ['mkt2', 'mkt', 'خالد', 'm', 'كاتب المحتوى', 0, ['كابشنات بلهجة عمانية', 'سكربت ريلز 30 ثانية', 'هوكات توقف التمرير', 'نصوص إعلانات'], ''],
+  ['mkt3', 'mkt', 'شيخة', 'f', 'السوشال ميديا', 0, ['جدول نشر أسبوعي', 'تيك توك وإنستقرام وسناب', 'ترندات عمانية', 'مؤثرين محليين'], ''],
+  ['mkt4', 'mkt', 'يوسف', 'm', 'الظهور المحلي والإعلانات', 0, ['قوقل ماب والبحث المحلي', 'إعلانات بميزانية صغيرة', 'استهداف مسقط', 'تتبع النتائج'], ''],
+  ['cre', 'cre', 'مريم', 'f', 'قائدة التصميم', 1, ['هوية بصرية', 'اتجاه فني', 'دليل العلامة', 'مراجعة التصاميم'], ''],
+  ['cre2', 'cre', 'عبدالله', 'm', 'فيديو وموشن', 0, ['مونتاج ريلز', 'موشن جرافيك', 'ستوريبورد', 'برومبتات فيديو بالذكاء الاصطناعي'], ''],
+  ['cre3', 'cre', 'أسماء', 'f', 'تصميم الواجهات', 0, ['تجربة المستخدم', 'واجهات الجوال', 'رحلة المستخدم', 'اختبار سهولة الاستخدام'], ''],
+  ['sup', 'sup', 'عائشة', 'f', 'قائدة خدمة العملاء', 1, ['حل الشكاوى', 'سياسة التصعيد', 'قياس الرضا', 'تحسين التجربة من الشكاوى'], 'db'],
+  ['sup2', 'sup', 'ناصر', 'm', 'دعم المحلات', 0, ['تسجيل المحل خطوة بخطوة', 'تدريب على الرد بالعروض', 'حل مشاكل التطبيق', 'رسائل ترحيب'], ''],
+  ['sup3', 'sup', 'أمل', 'f', 'مركز المساعدة', 0, ['أسئلة شائعة', 'ردود جاهزة', 'أدلة مصورة', 'نبرة دافئة'], ''],
+  ['hr', 'hr', 'نوال', 'f', 'قائدة الموارد البشرية', 1, ['هيكل الفريق', 'توزيع المهام', 'تقييم الأداء', 'السياسات'], ''],
+  ['hr2', 'hr', 'علي', 'm', 'التوظيف', 0, ['وصف الوظائف', 'أسئلة المقابلات', 'تقييم المرشحين', 'توظيف مناديب ميدانيين'], ''],
+  ['hr3', 'hr', 'بشرى', 'f', 'ثقافة الفريق', 0, ['تهيئة الموظف الجديد', 'ثقافة الفريق', 'حل الخلافات', 'الموازنة بين الدراسة والشغل'], '']
+];
+var EMP = {}, ORDER = [];
+ROSTER.forEach(function (r) { EMP[r[0]] = { id: r[0], team: r[1], name: r[2], g: r[3], title: r[4], lead: !!r[5], skills: r[6], tools: r[7] ? r[7].split(' ') : [] }; ORDER.push(r[0]); });
+EMP.chief = { id: 'chief', team: null, name: 'راشد', g: 'm', title: 'رئيس الفريق', lead: true, skills: ['فهم القصد من كلام ناقص', 'تصحيح الصياغة', 'برومبت مفصّل لكل تخصص', 'توزيع على الأقسام', 'دمج النتائج بقرار'], tools: [] };
+TEAMS.forEach(function (t) { t.members = ORDER.filter(function (id) { return EMP[id].team === t.id; }); });
+function colorOf(e) { return e.team ? TEAM[e.team].color : '#F29B3F'; }
+function persona(e) {
+  var t = TEAM[e.team], you = e.g === 'f' ? 'أنتِ' : 'أنت';
+  return you + ' "' + e.name + '"، ' + e.title + ' في فريق ' + t.name + ' بشركة وينه.\n' + t.brief + '\nمهاراتك الأساسية: ' + e.skills.join('، ') + '.' +
+    (e.lead ? '\n' + you + ' قائد الفريق: تهتم بالصورة الكاملة والقرار، وتسلّم شي يقدر المؤسس يعتمده مباشرة.' : '') +
+    '\nذوق فريقك: ' + t.taste.join('؛ ') + '.';
+}
+
+/* ================= state & storage ================= */
+var S = { tasks: {}, chat: [], brain: {}, running: {}, panel: null, filter: 'all', busyChief: false, meeting: false, unseen: {}, calOff: 0, tier: LS.get('hq.tier', 'default'), db: null, sample: null, sampleOK: 'loading', mcp: null, canTools: false, tools: false, confirmDel: null };
+var running = S.running;
+function tasks(f) { return Object.keys(S.tasks).map(function (k) { return S.tasks[k]; }).filter(f || function () { return true; }).sort(function (a, b) { return b.at - a.at; }); }
+function empOf(t) { return EMP[t.emp] || EMP.chief; }
+function isWorking(id) { if (id === 'chief') return S.busyChief || S.meeting; for (var k in running) { if (S.tasks[k] && S.tasks[k].emp === id) return true; } return false; }
+function waiting(id) { for (var k in S.tasks) { if (S.tasks[k].emp === id && S.tasks[k].status === 'review') return true; } return false; }
+function clean(o) { var r = {}; Object.keys(o).forEach(function (k) { if (o[k] !== undefined) r[k] = o[k]; }); return r; }
+function dbErr(e) { if (e && e.code === 'quota_exceeded') toast('امتلت ذاكرة المقر. امسح شغل قديم.'); }
+var Store = {
+  task: function (t) { S.tasks[t.id] = t; if (S.db) S.db.doc('tasks/' + t.id).set(clean(t)).catch(dbErr); },
+  msg: function (m) { S.chat.push(m); if (S.db) S.db.doc('chat/' + m.id).set(clean(m)).catch(dbErr); },
+  note: function (n) { S.brain[n.id] = n; if (S.db) S.db.doc('brain/' + n.id).set(clean(n)).catch(dbErr); },
+  unnote: function (id) { delete S.brain[id]; if (S.db) S.db.doc('brain/' + id).delete().catch(dbErr); }
+};
+function brainNotes() { return Object.keys(S.brain).map(function (k) { return S.brain[k]; }).sort(function (a, b) { return b.at - a.at; }); }
+function brainText() { var out = '', n = 0; brainNotes().forEach(function (x) { if (out.length < 3500 && n < 40) { out += '- ' + x.text + '\n'; n++; } }); return out; }
+
+/* ================= Claude calls ================= */
+var CODES = { not_granted: 'ما سمحت للمقر يستخدم Claude. افتح المقر مرة ثانية واسمح له.', rate_limited: 'الفريق مضغوط الحين، جرّب بعد دقايق.', session_expired: 'سجّل دخولك في Claude مرة ثانية.', sampling_disabled: 'Claude مو متاح لهالحساب.', refused: 'Claude رفض هالطلب. غيّر صياغته.', prompt_too_large: 'الطلب طويل وايد، قصّره.', invalid_json: 'راشد ردّ بصيغة لخبطة. جرّب مرة ثانية.' };
+function errText(e) { return CODES[e && e.code] || 'صار خلل بالاتصال. جرّب مرة ثانية.'; }
+var BAD_SQL = /\b(insert|update|delete|drop|alter|create|grant|revoke|truncate|comment|copy|call|do|execute|vacuum|refresh|lock|set|reset|merge|pg_read\w*|pg_ls\w*|lo_import|dblink\w*)\b/i;
+function pageTools(e) {
+  if (!S.tools || !S.mcp) return [];
+  var out = [];
+  if (e.tools.indexOf('db') >= 0) out.push({ name: 'waynah_db', description: 'Runs ONE read-only SQL SELECT on the live Waynah Postgres database and returns up to 50 rows. Tables: requests(id,code,car jsonb {brandAr,model,year},part,note,tags,status open|booked|arrived|done|cancelled,chosen shop id,final_price,created_at epoch ms), offers(request_id,shop_id,shop_name,price,cond,avail,demo,at epoch ms), shops(id,name,type,cats,brands,plan,created_at epoch ms,lat,lng), messages(id,request_id,shop_id,from_role c|s|x,text,kind,price,at). Rows whose part contains "اختبار" are automated tests. Phone numbers are hidden.',
+    inputSchema: { type: 'object', properties: { sql: { type: 'string', description: 'A single SELECT or WITH ... SELECT statement, no semicolons.' } }, required: ['sql'] },
+    execute: function (input) {
+      var sql = String(input.sql || '').trim().replace(/;+\s*$/, '');
+      if (!/^(select|with)\b/i.test(sql) || sql.indexOf(';') >= 0 || BAD_SQL.test(sql)) throw new Error('Only one read-only SELECT is allowed.');
+      return S.mcp.callTool('Supabase', 'execute_sql', { project_id: 'sjlqtlmpgypcmylcycpz', query: 'select * from (' + sql + ') q limit 50' }).then(function (r) {
+        var p = r && r.payload; var txt = typeof p === 'string' ? p : JSON.stringify(p);
+        return String(txt || '').replace(/"phone"\s*:\s*"[^"]*"/g, '"phone":"hidden"').replace(/\+?968\d{8}/g, '[hidden]').slice(0, 9000);
+      }, function (er) { throw new Error((er && er.code) || 'db_error'); });
+    } });
+  if (e.tools.indexOf('vercel') >= 0) out.push({ name: 'vercel_deployments', description: 'Lists the 5 latest deployments of the Waynah website on Vercel with their state (READY, ERROR, BUILDING) and commit message.',
+    execute: function () { return S.mcp.callTool('Vercel', 'list_deployments', { projectId: 'waynah', limit: 5 }).then(function (r) { return JSON.stringify(r && r.payload).slice(0, 6000); }, function (er) { throw new Error((er && er.code) || 'vercel_error'); }); } });
+  return out;
+}
+function empPrompt(e, task) {
+  var b = brainText();
+  return persona(e) + '\n\n' + WAYNAH + '\n\n' + (b ? 'العقل المشترك (قرارات ومعلومات الفريق):\n' + b + '\n' : '') + TASTE +
+    '\n\nالمهمة اللي وصلتك من راشد (رئيس الفريق):\n' + task + '\n\nسلّم الشغل الحين، جاهز للاستخدام، بتنسيق Markdown بسيط (عناوين ###، نقاط، جداول عند الحاجة).';
+}
+function rosterText() {
+  return TEAMS.map(function (t) { return '## ' + t.name + ' (' + t.id + ')\n' + t.members.map(function (id) { var e = EMP[id]; return '- ' + id + ': ' + e.name + '، ' + e.title + (e.lead ? ' [قائد]' : '') + ' — ' + e.skills.join('، ') + (e.tools.indexOf('db') >= 0 ? ' — يقدر يقرأ بيانات وينه الحية' : ''); }).join('\n'); }).join('\n');
+}
+function chiefPrompt(msg) {
+  var hist = S.chat.slice(-6).map(function (m) { return (m.role === 'you' ? 'المؤسس: ' : 'راشد: ') + (m.text || '').slice(0, 500); }).join('\n');
+  var recent = tasks().slice(0, 10).map(function (t) { var e = empOf(t); return '- ' + e.name + ' (' + e.title + '): ' + t.title + ' [' + t.status + ']'; }).join('\n');
+  var b = brainText();
+  return 'أنت "راشد"، رئيس الفريق (Chief of Staff) في شركة وينه الناشئة. المؤسس يكلمك، وأنت توزّع الشغل على الأقسام والموظفين.\n\n' + WAYNAH +
+    (b ? '\n\nالعقل المشترك:\n' + b : '') +
+    '\n\nالأقسام والموظفين (استخدم المعرّف id بالضبط):\n' + rosterText() +
+    '\n\nشغلك مع كل رسالة:\n1) افهم قصد المؤسس حتى لو كلامه فيه أخطاء أو ناقص أو مستعجل.\n2) صحّح صياغته وقوّها: الهدف، النطاق، والأشياء الناقصة اللي تخلي النتيجة أقوى، بدون ما تغيّر قصده.\n3) اختر الموظفين المناسبين بالاسم (عادة 1 إلى 4، ومن أقسام مختلفة إذا يحتاج). وزّع المهمة الكبيرة على أكثر من شخص يشتغلون بالتوازي، كل واحد على جزء واضح. لا تشغّل أحد بدون داعي. إذا الرسالة سؤال بسيط أو دردشة جاوبه بنفسك وخل القائمة فاضية.\n4) لكل موظف برومبت احترافي كامل بالعربي مفصّل على تخصصه: الهدف، السياق، المطلوب بالضبط، شكل التسليم وطوله، اللهجة، ومعايير الجودة. مستقل ومفهوم بدون رسالة المؤسس.\n5) "approval": true لأي شغل بيطلع للناس (منشور، إعلان، رسالة لمحل أو عميل) أو فيه فلوس أو التزام. غير كذا false.\n6) كن صريح: إذا الفكرة فيها خلل قوله في ردك.\n\n' +
+    (hist ? 'آخر المحادثة:\n' + hist + '\n\n' : '') + (recent ? 'آخر شغل الفريق:\n' + recent + '\n\n' : '') +
+    'رسالة المؤسس الجديدة:\n"""' + msg + '"""\n\n' +
+    'رد بـ JSON فقط:\n{"reply":"ردك على المؤسس باللهجة الخليجية، سطرين لثلاثة، مباشر","corrected":"طلبه بعد التصحيح والترتيب","fixes":["وش صححت أو أضفت، 0 إلى 4 نقاط"],"assignments":[{"emp":"id الموظف","title":"عنوان قصير","prompt":"البرومبت الكامل","approval":false}]}';
+}
+function extractNotes(t) {
+  var m = String(t.result || '').split(/^#{2,4}\s*للذاكرة\s*$/m);
+  if (m.length < 2) return;
+  var lines = m[1].split('\n').map(function (l) { return l.replace(/^\s*[-*•\d.)]+\s*/, '').trim(); }).filter(function (l) { return l && !/^#/.test(l) && !/^الخطوة الجاية/.test(l); }).slice(0, 3);
+  var have = brainNotes().map(function (n) { return n.text; });
+  lines.forEach(function (l, i) { if (have.indexOf(l) < 0 && l.length < 400) Store.note({ id: uid() + i, text: l, by: t.emp, at: now() + i }); });
+}
+function runTask(t) {
+  var e = empOf(t);
+  Store.task(t);
+  var ctl = new AbortController();
+  running[t.id] = { text: '', ctl: ctl, step: '' };
+  World.dispatch(t.emp);
+  render();
+  var tools = pageTools(e), opts = { signal: ctl.signal, modelTier: S.tier, onText: function (u) { if (running[t.id]) { running[t.id].text = u.text; liveRender(); } } };
+  if (tools.length) opts.tools = tools.map(function (tl) { var ex = tl.execute; return Object.assign({}, tl, { execute: function (i) { if (running[t.id]) { running[t.id].step = tl.name === 'waynah_db' ? 'يقرأ بيانات وينه الحية…' : 'يفحص النشر…'; liveRender(); } return ex(i); } }); });
+  else opts.cache = false;
+  S.sample(empPrompt(e, t.prompt), opts)
+    .then(function (r) { t.result = r.text + (r.truncated ? '\n\n_(انقطع الرد لأنه طويل)_' : ''); t.status = t.approval ? 'review' : 'done'; t.doneAt = now(); extractNotes(t); })
+    .catch(function (er) { t.status = er && er.code === 'cancelled' ? 'stopped' : 'error'; t.result = (er && er.text ? er.text + '\n\n' : '') + (er && er.code === 'cancelled' ? '' : '_' + errText(er) + '_'); t.doneAt = now(); })
+    .then(function () { delete running[t.id]; S.unseen[t.emp] = true; Store.task(t); World.returnPacket(t.emp); render(); toast(e.name + (t.status === 'review' ? ' خلّص وينتظر موافقتك: ' : ' خلّص: ') + t.title); });
+}
+function dispatch(list, from) {
+  list.forEach(function (a, i) {
+    var e = EMP[a.emp]; if (!e || a.emp === 'chief') return;
+    var t = { id: uid(), emp: a.emp, team: e.team, title: String(a.title || 'مهمة').slice(0, 120), prompt: String(a.prompt || ''), from: from, approval: !!a.approval, status: 'working', result: '', at: now() + i };
+    a.taskId = t.id;
+    setTimeout(function () { runTask(t); }, i * 350);
+  });
+}
+function needClaude() { if (S.sample) return false; toast('افتح المقر من حسابك في Claude عشان يشتغل الفريق.'); return true; }
+function askChief(msg) {
+  if (needClaude() || S.busyChief) return;
+  Store.msg({ id: uid(), role: 'you', text: msg, at: now() });
+  S.busyChief = true; openPanel('chief');
+  S.sample.json(chiefPrompt(msg), { modelTier: S.tier === 'quick' ? 'default' : 'complex', cache: false })
+    .then(function (j) {
+      j = j && typeof j === 'object' ? j : {};
+      var as = Array.isArray(j.assignments) ? j.assignments.filter(function (a) { return a && EMP[a.emp] && a.emp !== 'chief' && a.prompt; }).slice(0, 8) : [];
+      S.busyChief = false;
+      dispatch(as, 'chief');
+      Store.msg({ id: uid(), role: 'chief', text: String(j.reply || 'تمام.'), corrected: String(j.corrected || ''), fixes: Array.isArray(j.fixes) ? j.fixes.slice(0, 5).map(String) : [], assignments: as.map(function (a) { return { emp: a.emp, title: String(a.title || 'مهمة').slice(0, 120), taskId: a.taskId }; }), at: now() });
+    })
+    .catch(function (er) { S.busyChief = false; Store.msg({ id: uid(), role: 'chief', text: errText(er), err: true, at: now() }); })
+    .then(function () { render(); });
+}
+function direct(id, text, polish) {
+  if (needClaude()) return;
+  var e = EMP[id];
+  if (polish) { askChief('حوّل هذا الطلب لـ' + e.name + ' (' + e.title + '، ' + TEAM[e.team].name + ') فقط، وصحّحه ورتّبه قبل لا توصله: ' + text); return; }
+  dispatch([{ emp: id, title: text.slice(0, 70), prompt: text, approval: false }], 'you');
+}
+function approve(id) { var t = S.tasks[id]; if (!t) return; t.status = 'done'; t.approvedAt = now(); Store.task(t); Store.note({ id: uid(), text: 'اعتمد المؤسس: ' + t.title + ' (' + empOf(t).name + ')', by: 'you', at: now() }); toast('اعتمدته.'); render(); }
+function revise(id, fb) { var t = S.tasks[id]; if (!t || needClaude()) return; t.status = 'done'; t.revised = true; Store.task(t); dispatch([{ emp: t.emp, title: 'تعديل: ' + t.title, approval: true, prompt: t.prompt + '\n\nهذي نسختك السابقة:\n' + String(t.result || '').slice(0, 6000) + '\n\nملاحظات المؤسس اللي لازم تطبقها:\n' + fb }], 'you'); toast('رجّعته لـ' + empOf(t).name + ' مع ملاحظاتك.'); }
+function meeting() {
+  if (S.meeting || needClaude()) return;
+  var done = tasks(function (t) { return t.status === 'done' || t.status === 'review'; }).slice(0, 10);
+  if (!done.length) { toast('ما عندنا شغل مخلّص نجتمع عليه. عط راشد مهمة أول.'); return; }
+  var who = []; done.forEach(function (t) { if (who.indexOf(t.emp) < 0 && EMP[t.emp] && t.emp !== 'chief') who.push(t.emp); });
+  S.meeting = true; World.gather(who); openPanel('chief');
+  var p = 'أنت "راشد"، رئيس فريق وينه، في اجتماع سريع.\n\n' + WAYNAH + '\n\n' + TASTE + '\n\nآخر شغل سلّمه الفريق:\n' +
+    done.map(function (t) { var e = empOf(t); return '### ' + e.name + ' (' + e.title + '): ' + t.title + '\n' + String(t.result || '').slice(0, 1400); }).join('\n\n') +
+    '\n\nاكتب ملخص الاجتماع للمؤسس: ### القرارات (3 كحد أقصى)، ### تعارضات أو مخاطر بين شغل الأقسام، ### الخطوات الجاية (3 خطوات، كل وحدة باسم الموظف المسؤول ومتى).';
+  S.sample(p, { modelTier: 'complex', cache: false })
+    .then(function (r) { Store.msg({ id: uid(), role: 'chief', text: r.text, meeting: true, at: now() }); extractNotes({ result: r.text, emp: 'chief' }); })
+    .catch(function (er) { Store.msg({ id: uid(), role: 'chief', text: errText(er), err: true, at: now() }); })
+    .then(function () { S.meeting = false; World.disperse(); render(); });
+}
+
+/* ================= markdown ================= */
+function md(src) {
+  var lines = esc(src || '').split('\n'), out = [], list = null, pre = false, buf = [], tbl = null;
+  var inline = function (s) { return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/(^|\s)_(.+?)_(?=\s|$)/g, '$1<em>$2</em>'); };
+  var closeL = function () { if (list) { out.push('</' + list + '>'); list = null; } };
+  var closeT = function () { if (tbl) { out.push('<div class="tw"><table>' + tbl.join('') + '</table></div>'); tbl = null; } };
+  lines.forEach(function (l) {
+    if (/^```/.test(l)) { if (pre) { out.push('<pre>' + buf.join('\n') + '</pre>'); buf = []; pre = false; } else { closeL(); closeT(); pre = true; } return; }
+    if (pre) { buf.push(l); return; }
+    if (/^\s*\|.*\|\s*$/.test(l)) { closeL(); if (/^\s*\|[\s:|-]+\|\s*$/.test(l)) return; tbl = tbl || []; tbl.push('<tr>' + l.trim().slice(1, -1).split('|').map(function (c) { return '<td>' + inline(c.trim()) + '</td>'; }).join('') + '</tr>'); return; }
+    closeT();
+    var m;
+    if ((m = l.match(/^#{1,4}\s+(.*)/))) { closeL(); out.push('<h4>' + inline(m[1]) + '</h4>'); return; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { if (list !== 'ul') { closeL(); out.push('<ul>'); list = 'ul'; } out.push('<li>' + inline(m[1]) + '</li>'); return; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== 'ol') { closeL(); out.push('<ol>'); list = 'ol'; } out.push('<li>' + inline(m[1]) + '</li>'); return; }
+    if (!l.trim()) { closeL(); return; }
+    closeL(); out.push('<p>' + inline(l) + '</p>');
+  });
+  closeL(); closeT(); if (pre) out.push('<pre>' + buf.join('\n') + '</pre>');
+  return out.join('');
+}
+function ago(t) { var s = Math.max(0, (now() - t) / 1000); if (s < 60) return 'الحين'; if (s < 3600) return 'قبل ' + Math.round(s / 60) + ' د'; if (s < 86400) return 'قبل ' + Math.round(s / 3600) + ' س'; return 'قبل ' + Math.round(s / 86400) + ' يوم'; }
+var ST = { working: 'يشتغل', review: 'ينتظرك', done: 'خلّص', error: 'تعطّل', stopped: 'توقف' };
+var FROM = { chief: 'من راشد', you: 'منك', routine: 'جولة الصبح', check: 'فحص تلقائي' };
+
+/* ================= 3D world ================= */
+var NOOP = { ok: false, sync: function () {}, dispatch: function () {}, returnPacket: function () {}, gather: function () {}, disperse: function () {}, focus: function () {} };
+var World = (function () {
+  var T = window.THREE; if (!T) return NOOP;
+  var canvas = $('#gl'), renderer;
+  try { renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' }); } catch (e) { return NOOP; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x090E1F);
+  var scene = new T.Scene();
+  var cam = new T.OrthographicCamera(-1, 1, 1, -1, -300, 300);
+  var target = new T.Vector3(0, 0, 0), zoom = .4, zoomGoal = 1, VIEW = 50;
+  var ISO = new T.Vector3(1, 0.95, 1).normalize();
+  function placeCam() { cam.position.copy(target).addScaledVector(ISO, 120); cam.lookAt(target); var a = canvas.clientWidth / Math.max(1, canvas.clientHeight), h = VIEW / zoom; if (a < 1) h = h / Math.max(a, .5) * .62; cam.left = -h * a / 2; cam.right = h * a / 2; cam.top = h / 2; cam.bottom = -h / 2; cam.updateProjectionMatrix(); }
+  scene.add(new T.HemisphereLight(0xC9D8FF, 0x1A1E36, 0.95));
+  var sun = new T.DirectionalLight(0xFFF1DD, 0.7); sun.position.set(18, 40, 26); scene.add(sun);
+  var fillL = new T.DirectionalLight(0x8FA8FF, 0.25); fillL.position.set(-30, 20, -10); scene.add(fillL);
+  var brainLight = new T.PointLight(0x7FE7FF, 1.4, 24); brainLight.position.set(0, 3, 0); scene.add(brainLight);
+  var MATS = {};
+  function mat(c, o) { var k = c + JSON.stringify(o || {}); if (!MATS[k]) MATS[k] = new T.MeshLambertMaterial(Object.assign({ color: c }, o || {})); return MATS[k]; }
+  var GEO = {};
+  function bgeo(w, h, d) { var k = w + ':' + h + ':' + d; return GEO[k] || (GEO[k] = new T.BoxGeometry(w, h, d)); }
+  function box(w, h, d, c, x, y, z, parent) { var m = new T.Mesh(bgeo(w, h, d), typeof c === 'object' ? c : mat(c)); m.position.set(x || 0, y || 0, z || 0); (parent || scene).add(m); return m; }
+  function cyl(rt, rb, h, c, x, y, z, parent, seg) { var m = new T.Mesh(new T.CylinderGeometry(rt, rb, h, seg || 14), typeof c === 'object' ? c : mat(c)); m.position.set(x || 0, y || 0, z || 0); (parent || scene).add(m); return m; }
+  function shade(hex, f) { return new T.Color(hex).multiplyScalar(f).getHex(); }
+  function tint(hex, t) { return new T.Color(hex).lerp(new T.Color(0xffffff), t).getHex(); }
+  function canvasTex(w, h, draw) { var c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); return new T.CanvasTexture(c); }
+  (function () {
+    var g = new T.BufferGeometry(), n = 420, pos = new Float32Array(n * 3);
+    for (var i = 0; i < n; i++) { pos[i * 3] = (Math.random() - .5) * 240; pos[i * 3 + 1] = -8 - Math.random() * 30; pos[i * 3 + 2] = (Math.random() - .5) * 240; }
+    g.setAttribute('position', new T.BufferAttribute(pos, 3));
+    scene.add(new T.Points(g, new T.PointsMaterial({ color: 0x5C6B99, size: 0.2, transparent: true, opacity: .7 })));
+    var glow = canvasTex(256, 256, function (x, w, h) { var gr = x.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, 'rgba(60,80,150,.5)'); gr.addColorStop(1, 'rgba(9,14,31,0)'); x.fillStyle = gr; x.fillRect(0, 0, w, h); });
+    var fl = new T.Mesh(new T.PlaneGeometry(130, 130), new T.MeshBasicMaterial({ map: glow, transparent: true, depthWrite: false })); fl.rotation.x = -Math.PI / 2; fl.position.y = -1.4; scene.add(fl);
+  })();
+  var codeTex = canvasTex(128, 256, function (x, w, h) { x.fillStyle = '#0B1324'; x.fillRect(0, 0, w, h); var cols = ['#7FE7FF', '#9BF0B5', '#FFC37A', '#C9B6FF', '#5B8CFF']; for (var i = 0; i < 40; i++) { x.fillStyle = cols[i % 5]; x.fillRect(8 + (i % 3) * 8, 6 + i * 6.2, 20 + Math.random() * 80, 3); } });
+  codeTex.wrapT = T.RepeatWrapping;
+  var screenOn = new T.MeshBasicMaterial({ map: codeTex }), screenOff = new T.MeshBasicMaterial({ color: 0x10172C });
+  var zTex = canvasTex(64, 64, function (x) { x.font = 'bold 46px sans-serif'; x.fillStyle = '#D6E0FF'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('z', 32, 34); });
+  var glowTex = canvasTex(128, 128, function (x, w, h) { var gr = x.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(220,252,255,1)'); gr.addColorStop(.25, 'rgba(127,231,255,.6)'); gr.addColorStop(1, 'rgba(127,231,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, w, h); });
+  var dashTex = canvasTex(64, 8, function (x) { x.clearRect(0, 0, 64, 8); x.fillStyle = '#7FE7FF'; x.fillRect(0, 2, 26, 4); });
+  dashTex.wrapS = T.RepeatWrapping;
+  var clickables = [], labels = [], rooms = {}, people = {}, packets = [];
+  var LBL = $('#labels');
+  function addLabel(html, pos, data, follow) { var el = document.createElement('div'); el.className = 'lbl'; el.innerHTML = html || ''; Object.keys(data || {}).forEach(function (k) { el.dataset[k] = data[k]; }); LBL.appendChild(el); var l = { el: el, pos: pos || new T.Vector3(), follow: follow, data: data || {} }; labels.push(l); return l; }
+  /* ----- brain ----- */
+  var brain = new T.Group(); scene.add(brain);
+  cyl(5.6, 6.0, .5, 0x131B38, 0, -.25, 0, brain, 48);
+  cyl(5.2, 5.2, .04, 0x1A2550, 0, .02, 0, brain, 48);
+  var ringMat = new T.MeshBasicMaterial({ color: 0x7FE7FF, transparent: true, opacity: .45, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide });
+  var floorRings = [2.2, 3.3, 4.4].map(function (r, i) { var m = new T.Mesh(new T.RingGeometry(r, r + .07 + i * .02, 64, 1, 0, Math.PI * (1.2 + i * .3)), ringMat); m.rotation.x = -Math.PI / 2; m.position.y = .06; brain.add(m); return m; });
+  var core = new T.Mesh(new T.SphereGeometry(.95, 32, 20), new T.MeshBasicMaterial({ color: 0xBFF6FF })); core.position.y = 2.3; brain.add(core);
+  var halo = new T.Sprite(new T.SpriteMaterial({ map: glowTex, blending: T.AdditiveBlending, depthWrite: false, transparent: true })); halo.scale.set(7, 7, 1); halo.position.y = 2.3; brain.add(halo);
+  var beam = new T.Mesh(new T.CylinderGeometry(.16, .16, 30, 16, 1, true), new T.MeshBasicMaterial({ color: 0x7FE7FF, transparent: true, opacity: .3, blending: T.AdditiveBlending, depthWrite: false })); beam.position.y = 15; brain.add(beam);
+  var orbits = [0, 1, 2].map(function (i) { var m = new T.Mesh(new T.TorusGeometry(1.6 + i * .35, .025, 8, 80), ringMat); m.position.y = 2.3; m.rotation.x = Math.PI / 2 + i * .5; m.rotation.y = i * .7; brain.add(m); return m; });
+  var brainHit = new T.Mesh(new T.CylinderGeometry(1.5, 1.5, 4.5, 12), new T.MeshBasicMaterial({ visible: false })); brainHit.position.y = 2.2; brainHit.userData = { kind: 'brain' }; brain.add(brainHit); clickables.push(brainHit);
+  var brainLabel = addLabel('', new T.Vector3(0, 5.6, 0), { brain: '1' });
+  /* ----- people ----- */
+  function makePerson(e, shirtHex, isChief) {
+    var root = new T.Group(), skin = [0xC68B5E, 0xB57A4F, 0xD9A27A, 0xA86F47][(e.name.charCodeAt(0) + e.name.length) % 4];
+    var hip = new T.Group(); hip.position.y = .86; root.add(hip);
+    var pants = isChief ? 0xF3EEE2 : e.g === 'f' ? 0x2B2F45 : 0x39405E;
+    var legs = [-.12, .12].map(function (x) { var thigh = new T.Group(); thigh.position.set(x, 0, 0); hip.add(thigh); box(.17, .44, .19, pants, 0, -.22, 0, thigh); var knee = new T.Group(); knee.position.set(0, -.44, 0); thigh.add(knee); box(.16, .42, .17, pants, 0, -.21, 0, knee); box(.18, .09, .28, 0x1B1F2E, 0, -.42, -.05, knee); return { thigh: thigh, knee: knee }; });
+    var upper = new T.Group(); hip.add(upper);
+    var dress = isChief ? 0xF3EEE2 : shirtHex;
+    box(.58, .64, .34, dress, 0, .33, 0, upper);
+    if (isChief) { box(.66, .9, .1, 0x1C2033, 0, .22, .2, upper); box(.68, .05, .12, 0xE8C06A, 0, .66, .2, upper); box(.04, .9, .12, 0xE8C06A, -.31, .22, .2, upper); box(.04, .9, .12, 0xE8C06A, .31, .22, .2, upper); }
+    if (e.g === 'f' && !isChief) box(.6, .5, .36, shade(shirtHex, .72), 0, -.12, 0, upper);
+    var arms = [-.37, .37].map(function (x) { var sh = new T.Group(); sh.position.set(x, .6, 0); upper.add(sh); box(.15, .52, .16, dress, 0, -.26, 0, sh); box(.13, .12, .13, skin, 0, -.56, 0, sh); return sh; });
+    var neck = new T.Group(); neck.position.y = .7; upper.add(neck);
+    var head = new T.Mesh(new T.SphereGeometry(.24, 14, 10), mat(skin)); head.position.y = .24; neck.add(head);
+    if (e.g === 'f') { var hc = [0x1D2236, 0x5A2238, 0x24425A, 0x3E2A4F][e.name.length % 4]; var hj = new T.Mesh(new T.SphereGeometry(.275, 14, 10), mat(hc)); hj.position.set(0, .26, .04); neck.add(hj); box(.5, .3, .3, hc, 0, .04, .06, neck); var face = new T.Mesh(new T.SphereGeometry(.2, 12, 8), mat(skin)); face.position.set(0, .23, -.1); neck.add(face); }
+    else { cyl(.215, .225, .17, isChief ? 0xF6EAD0 : 0xF2F2EC, 0, .43, 0, neck, 16); var band = new T.Mesh(new T.TorusGeometry(.22, .025, 6, 18), mat(isChief ? 0xB9823B : shirtHex)); band.rotation.x = Math.PI / 2; band.position.y = .38; neck.add(band); }
+    var zs = [0, 1].map(function () { var sp = new T.Sprite(new T.SpriteMaterial({ map: zTex, transparent: true, depthWrite: false })); sp.scale.set(.42, .42, 1); sp.visible = false; root.add(sp); return sp; });
+    var hitM = new T.Mesh(bgeo(1, 2.1, 1), new T.MeshBasicMaterial({ visible: false })); hitM.position.y = 1; hitM.userData = { kind: 'person', id: e.id }; root.add(hitM); clickables.push(hitM);
+    var sel = new T.Mesh(new T.RingGeometry(.55, .7, 32), new T.MeshBasicMaterial({ color: 0xFFC37A, transparent: true, opacity: .9, side: T.DoubleSide, depthWrite: false })); sel.rotation.x = -Math.PI / 2; sel.position.y = .14; sel.visible = false; root.add(sel);
+    var P = { e: e, root: root, hip: hip, upper: upper, legs: legs, arms: arms, neck: neck, zs: zs, sel: sel, mode: '', walk: null, phase: Math.random() * 6 };
+    P.label = addLabel('<div class="plab' + (isChief ? ' on' : '') + '"><i style="background:' + colorOf(e) + '"></i>' + esc(e.name) + (isChief ? ' · رئيس الفريق' : '') + '</div>', null, { emp: e.id }, P);
+    return P;
+  }
+  function setPose(p, mode) {
+    if (p.mode === mode) return; p.mode = mode;
+    var sit = mode === 'sleep' || mode === 'work';
+    p.hip.position.y = sit ? .56 : .86;
+    p.legs.forEach(function (l) { l.thigh.rotation.x = sit ? Math.PI / 2 : 0; l.knee.rotation.x = sit ? -Math.PI / 2 : 0; });
+    p.upper.rotation.x = mode === 'sleep' ? -.5 : 0; p.upper.rotation.y = 0;
+    p.neck.rotation.x = mode === 'sleep' ? -.45 : 0; p.neck.rotation.y = 0;
+    p.arms.forEach(function (a) { a.rotation.x = mode === 'sleep' ? 1.2 : mode === 'work' ? 1.05 : 0; });
+    p.zs.forEach(function (z) { z.visible = mode === 'sleep'; });
+    if (sit) p.root.rotation.y = 0;
+    if (p.scr) p.scr.material = mode === 'work' ? screenOn : screenOff;
+  }
+  /* ----- rooms ----- */
+  var W = 10.5, D = 8, R = 18;
+  var DESKS = [[-2.6, -1.3], [1.9, -1.3], [-2.6, 2.1], [1.9, 2.1]];
+  TEAMS.forEach(function (t, i) {
+    var a = -Math.PI * 3 / 4 + i * Math.PI / 4, cx = Math.cos(a) * R, cz = Math.sin(a) * R;
+    var g = new T.Group(); g.position.set(cx, 0, cz); scene.add(g);
+    var col = new T.Color(t.color).getHex();
+    var base = box(W, .7, D, shade(col, .5), 0, -.35, 0, g); base.userData = { kind: 'room', team: t.id }; clickables.push(base);
+    var fl = box(W - .25, .08, D - .25, tint(col, .1), 0, .04, 0, g); fl.userData = { kind: 'room', team: t.id }; clickables.push(fl);
+    box(W * .6, .02, D * .52, tint(col, .3), .5, .09, .5, g);
+    var wb = box(W, 2.9, .28, shade(col, .8), 0, 1.45, -D / 2 + .14, g); wb.userData = { kind: 'room', team: t.id }; clickables.push(wb);
+    var wl = box(.28, 2.9, D, shade(col, .68), -W / 2 + .14, 1.45, 0, g); wl.userData = { kind: 'room', team: t.id }; clickables.push(wl);
+    box(W, .12, .36, tint(col, .25), 0, 2.94, -D / 2 + .14, g); box(.36, .12, D, tint(col, .2), -W / 2 + .14, 2.94, 0, g);
+    box(2.6, 1.2, .05, mat(0x1C2A55, { emissive: 0x24427F, emissiveIntensity: .7 }), 2.4, 1.75, -D / 2 + .31, g);
+    box(.05, 1.0, 2.2, 0xEFF2F8, -W / 2 + .31, 1.7, 1.6, g);
+    cyl(.28, .22, .45, 0xE9E2D2, W / 2 - .7, .3, -D / 2 + .7, g, 10);
+    var leaf = new T.Mesh(new T.IcosahedronGeometry(.6, 0), mat(0x3FA463)); leaf.position.set(W / 2 - .7, 1.05, -D / 2 + .7); g.add(leaf);
+    cyl(.04, .04, 2.2, 0x2A2F45, -W / 2 + .8, 1.1, -D / 2 + .8, g, 6);
+    var lamp = new T.Mesh(new T.SphereGeometry(.22, 12, 8), new T.MeshBasicMaterial({ color: 0xFFE2A8 })); lamp.position.set(-W / 2 + .8, 2.3, -D / 2 + .8); g.add(lamp);
+    var roomLight = new T.Mesh(new T.PlaneGeometry(W - .5, D - .5), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); roomLight.rotation.x = -Math.PI / 2; roomLight.position.y = .12; g.add(roomLight);
+    t.members.forEach(function (id, k) {
+      var d = DESKS[k], dx = d[0], dz = d[1];
+      box(2.0, .09, .95, 0xEDEFF5, dx, .8, dz, g);
+      [[-.9, -.4], [.9, -.4], [-.9, .4], [.9, .4]].forEach(function (q) { box(.07, .78, .07, 0x2A2F45, dx + q[0], .4, dz + q[1], g); });
+      box(1.05, .64, .07, 0x141A2C, dx, 1.26, dz - .3, g);
+      var scr = box(.96, .55, .02, screenOff, dx, 1.26, dz - .255, g);
+      box(.1, .3, .1, 0x141A2C, dx, .98, dz - .32, g);
+      box(.5, .03, .18, 0xC9CED9, dx, .86, dz + .05, g);
+      var chair = new T.Group(); chair.position.set(dx, 0, dz + .72); g.add(chair);
+      box(.62, .1, .6, 0x232A44, 0, .52, 0, chair); box(.62, .72, .09, 0x232A44, 0, .9, .3, chair); cyl(.05, .05, .45, 0x3A415E, 0, .26, 0, chair, 6);
+      var p = makePerson(EMP[id], col);
+      p.home = new T.Vector3(cx + dx, 0, cz + dz + .62); p.root.position.copy(p.home); p.scr = scr;
+      people[id] = p; scene.add(p.root);
+    });
+    var toward = new T.Vector3(-cx, 0, -cz).normalize(), edge = new T.Vector3();
+    if (Math.abs(toward.x) * D > Math.abs(toward.z) * W) edge.set(cx + Math.sign(toward.x) * W / 2, 0, cz + toward.z / Math.abs(toward.x) * W / 2); else edge.set(cx + toward.x / Math.abs(toward.z) * D / 2, 0, cz + Math.sign(toward.z) * D / 2);
+    var start = new T.Vector3(cx, 0, cz).normalize().multiplyScalar(5.7);
+    var len = start.distanceTo(edge), mid = start.clone().add(edge).multiplyScalar(.5), ang = Math.atan2(edge.x - start.x, edge.z - start.z);
+    var road = box(1.5, .08, len, 0x182042, mid.x, -.06, mid.z); road.rotation.y = ang;
+    var dt = dashTex.clone(); dt.needsUpdate = true; dt.wrapS = T.RepeatWrapping; dt.repeat.set(Math.max(1, Math.round(len / 1.3)), 1);
+    var dash = new T.Mesh(new T.PlaneGeometry(.16, len), new T.MeshBasicMaterial({ map: dt, transparent: true, blending: T.AdditiveBlending, depthWrite: false, opacity: .8 }));
+    dt.rotation = Math.PI / 2; dt.center.set(.5, .5);
+    dash.rotation.order = 'YXZ'; dash.rotation.y = ang; dash.rotation.x = -Math.PI / 2; dash.position.set(mid.x, .02, mid.z); scene.add(dash);
+    rooms[t.id] = { g: g, cx: cx, cz: cz, light: roomLight, start: start, edge: edge, dashTex: dt, busy: false };
+    rooms[t.id].label = addLabel('', new T.Vector3(cx - W / 2 + 1.6, 3.7, cz - D / 2 + .4), { team: t.id });
+  });
+  /* ----- chief ----- */
+  var chief = makePerson(EMP.chief, 0xF1E4CB, true); chief.home = new T.Vector3(2.4, 0, 3.6); chief.root.position.copy(chief.home); people.chief = chief; scene.add(chief.root); setPose(chief, 'stand'); chief.root.rotation.y = Math.PI * 1.25;
+  /* ----- walking & meetings ----- */
+  function walkTo(p, pts, done) { p.walk = { pts: pts.map(function (v) { return v.clone(); }), i: 0, done: done }; setPose(p, 'walk'); }
+  function gather(ids) {
+    ids.forEach(function (id, i) {
+      var p = people[id], r = rooms[EMP[id].team]; if (!p || !r) return;
+      var a = (i / Math.max(1, ids.length)) * Math.PI * 2, spot = new T.Vector3(Math.cos(a) * 3.8, 0, Math.sin(a) * 3.8);
+      var inner = new T.Vector3(r.cx, 0, r.cz).lerp(r.edge, .7);
+      p.gathered = true;
+      walkTo(p, [inner, r.edge, r.start, spot], function () { setPose(p, 'stand'); p.root.rotation.y = Math.atan2(-spot.x, -spot.z) + Math.PI; });
+    });
+    walkTo(chief, [new T.Vector3(0, 0, 1.9)], function () { setPose(chief, 'stand'); chief.root.rotation.y = Math.PI * 1.25; });
+  }
+  function disperse() {
+    Object.keys(people).forEach(function (id) {
+      var p = people[id];
+      if (id === 'chief') { walkTo(p, [p.home], function () { setPose(p, 'stand'); p.root.rotation.y = Math.PI * .25; }); return; }
+      if (!p.gathered) return;
+      var r = rooms[EMP[id].team], inner = new T.Vector3(r.cx, 0, r.cz).lerp(r.edge, .7);
+      walkTo(p, [r.start, r.edge, inner, p.home], function () { p.gathered = false; p.mode = ''; sync(); });
+    });
+  }
+  var pktGeo = new T.SphereGeometry(.22, 12, 8);
+  function packet(team, back) {
+    var r = rooms[team]; if (!r) return;
+    var c = back ? 0x9BF0B5 : 0xFFC37A, m = new T.Mesh(pktGeo, new T.MeshBasicMaterial({ color: c })); scene.add(m);
+    var sp = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: c, blending: T.AdditiveBlending, transparent: true, depthWrite: false })); sp.scale.set(1.7, 1.7, 1); m.add(sp);
+    packets.push({ m: m, a: back ? r.edge.clone() : new T.Vector3(), b: back ? new T.Vector3() : r.edge.clone(), mid: r.start.clone(), t: 0, dur: 1.4 });
+  }
+  /* ----- sync with app state ----- */
+  function sync() {
+    Object.keys(people).forEach(function (id) {
+      var p = people[id];
+      p.sel.visible = S.panel === 'emp:' + id || (id === 'chief' && S.panel === 'chief');
+      if (id === 'chief' || p.walk || p.gathered) return;
+      setPose(p, isWorking(id) ? 'work' : 'sleep');
+    });
+    TEAMS.forEach(function (t) { var r = rooms[t.id]; r.busy = t.members.some(isWorking); r.light.material.opacity = r.busy ? .1 : 0; });
+    labels.forEach(function (l) {
+      if (l.data.team) { var tm = TEAM[l.data.team], busy = tm.members.filter(isWorking).length, wait = tm.members.filter(waiting).length; l.el.innerHTML = '<div class="rlab' + (busy ? ' hot' : '') + '"><span class="ic" style="background:' + tm.color + '">' + svgI(tm.id) + '</span><span><b>' + esc(tm.name) + '</b><small><span class="dotr' + (busy ? '' : ' off') + '"></span>' + tm.members.length + ' موظفين · ' + (busy ? busy + ' يشتغلون' : 'نايمين') + (wait ? ' · ' + wait + ' ينتظرك' : '') + '</small></span></div>'; }
+      else if (l.data.brain) l.el.innerHTML = '<div class="blab"><b>العقل المشترك</b>' + brainNotes().length + ' ملاحظة · ذاكرة الفريق</div>';
+      else if (l.data.emp && l.data.emp !== 'chief') { var pl = l.el.firstChild; if (pl) pl.classList.toggle('on', l.data.emp === hovered || S.panel === 'emp:' + l.data.emp || isWorking(l.data.emp)); }
+    });
+  }
+  /* ----- input ----- */
+  var ray = new T.Raycaster(), ndc = new T.Vector2(), pointers = {}, drag = null, pinch = null, moved = 0, hovered = null, fly = null;
+  function setNdc(cx, cy) { var r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, cam); }
+  function groundAt(cx, cy) { setNdc(cx, cy); var k = -ray.ray.origin.y / ray.ray.direction.y; return ray.ray.origin.clone().addScaledVector(ray.ray.direction, k); }
+  canvas.addEventListener('pointerdown', function (ev) { try { canvas.setPointerCapture(ev.pointerId); } catch (e) {} pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY }; moved = 0; fly = null; var ids = Object.keys(pointers); if (ids.length === 1) drag = { g: groundAt(ev.clientX, ev.clientY) }; else if (ids.length === 2) { var a = pointers[ids[0]], b = pointers[ids[1]]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: zoomGoal }; drag = null; } canvas.style.cursor = 'grabbing'; });
+  canvas.addEventListener('pointermove', function (ev) {
+    if (!pointers[ev.pointerId]) { hover(ev); return; }
+    var p0 = pointers[ev.pointerId]; moved += Math.abs(ev.clientX - p0.x) + Math.abs(ev.clientY - p0.y); pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    var ids = Object.keys(pointers);
+    if (pinch && ids.length === 2) { var a = pointers[ids[0]], b = pointers[ids[1]]; zoomGoal = clampZ(pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, pinch.d)); zoom = zoomGoal; return; }
+    if (drag) { placeCam(); var g = groundAt(ev.clientX, ev.clientY); target.add(drag.g.clone().sub(g)); target.y = 0; clampT(); placeCam(); }
+  });
+  function up(ev) { var was = pointers[ev.pointerId]; delete pointers[ev.pointerId]; if (Object.keys(pointers).length < 2) pinch = null; if (!Object.keys(pointers).length) { if (was && moved < 8) pick(ev.clientX, ev.clientY); drag = null; canvas.style.cursor = 'grab'; } }
+  canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('wheel', function (ev) { ev.preventDefault(); fly = null; zoomGoal = clampZ(zoomGoal * (ev.deltaY > 0 ? .88 : 1.13)); }, { passive: false });
+  function clampZ(z) { return Math.max(.5, Math.min(3.4, z)); }
+  function clampT() { target.x = Math.max(-30, Math.min(30, target.x)); target.z = Math.max(-30, Math.min(30, target.z)); }
+  function hit(cx, cy) { setNdc(cx, cy); var h = ray.intersectObjects(clickables, false); if (!h.length) return null; var per = h.filter(function (x) { return x.object.userData.kind === 'person'; })[0]; return (per || h[0]).object.userData; }
+  function pick(cx, cy) { var u = hit(cx, cy); if (!u) return; if (u.kind === 'person') openPanel(u.id === 'chief' ? 'chief' : 'emp:' + u.id); else if (u.kind === 'room') openPanel('team:' + u.team); else if (u.kind === 'brain') openPanel('brain'); }
+  function hover(ev) { if (ev.pointerType !== 'mouse') return; var u = hit(ev.clientX, ev.clientY); var id = u && u.kind === 'person' ? u.id : null; canvas.style.cursor = u ? 'pointer' : 'grab'; if (id !== hovered) { hovered = id; sync(); } }
+  function focus(where) { var r = where === 'brain' ? { cx: 0, cz: 0 } : rooms[where]; if (!r) return; var mob = canvas.clientWidth < 820; fly = { from: target.clone(), to: new T.Vector3(r.cx, 0, r.cz + (mob ? 4 : 0)), t: 0, z0: zoomGoal, z1: where === 'brain' ? 1.3 : (mob ? 1.5 : 1.8) }; }
+  function fit() { fly = { from: target.clone(), to: new T.Vector3(), t: 0, z0: zoomGoal, z1: 1 }; }
+  $('#zin').onclick = function () { zoomGoal = clampZ(zoomGoal * 1.25); };
+  $('#zout').onclick = function () { zoomGoal = clampZ(zoomGoal / 1.25); };
+  $('#zfit').onclick = fit;
+  /* ----- minimap ----- */
+  var mm = $('#minimap'), mx = mm.getContext('2d'), MS = 3.4;
+  function toMM(x, z) { return [168 + (x - z) * .7071 * MS, 112 + (x + z) * .7071 * .58 * MS]; }
+  function fromMM(px, py) { var u = (px - 168) / (.7071 * MS), v = (py - 112) / (.7071 * .58 * MS); return [(u + v) / 2, (v - u) / 2]; }
+  function drawMini() {
+    mx.clearRect(0, 0, 336, 224);
+    TEAMS.forEach(function (t) { var r = rooms[t.id], p = toMM(r.cx, r.cz); mx.globalAlpha = r.busy ? 1 : .55; mx.fillStyle = t.color; mx.fillRect(p[0] - 18, p[1] - 9, 36, 18); });
+    mx.globalAlpha = 1; var c = toMM(0, 0); mx.fillStyle = '#7FE7FF'; mx.beginPath(); mx.arc(c[0], c[1], 7, 0, 7); mx.fill();
+    var a = canvas.clientWidth / Math.max(1, canvas.clientHeight), h = VIEW / zoom, w = h * a, tp = toMM(target.x, target.z);
+    mx.strokeStyle = 'rgba(255,255,255,.85)'; mx.lineWidth = 2; mx.strokeRect(tp[0] - w * MS / 2, tp[1] - h * MS * .62 / 2, w * MS, h * MS * .62);
+  }
+  mm.addEventListener('click', function (ev) { var r = mm.getBoundingClientRect(), q = fromMM((ev.clientX - r.left) / r.width * 336, (ev.clientY - r.top) / r.height * 224); fly = { from: target.clone(), to: new T.Vector3(q[0], 0, q[1]), t: 0, z0: zoomGoal, z1: zoomGoal }; });
+  /* ----- labels ----- */
+  var v3 = new T.Vector3();
+  function placeLabels() {
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    for (var i = 0; i < labels.length; i++) {
+      var l = labels[i];
+      if (l.follow) { l.pos.copy(l.follow.root.position); l.pos.y += l.follow.mode === 'stand' || l.follow.mode === 'walk' ? 2.35 : 1.95; }
+      v3.copy(l.pos).project(cam);
+      var x = (v3.x + 1) / 2 * w, y = (1 - v3.y) / 2 * h;
+      if (!l.w) { l.w = l.el.offsetWidth; l.h = l.el.offsetHeight; }
+      l.el.style.transform = 'translate(' + (x - l.w / 2).toFixed(1) + 'px,' + (y - l.h).toFixed(1) + 'px)';
+    }
+  }
+  var oldSync = sync; sync = function () { oldSync(); labels.forEach(function (l) { l.w = 0; }); };
+  LBL.addEventListener('click', function (ev) { var el = ev.target.closest('.lbl'); if (!el) return; if (el.dataset.team) openPanel('team:' + el.dataset.team); else if (el.dataset.brain) openPanel('brain'); else if (el.dataset.emp) openPanel(el.dataset.emp === 'chief' ? 'chief' : 'emp:' + el.dataset.emp); });
+  /* ----- loop ----- */
+  var clock = new T.Clock(), lastMini = 0;
+  function frame() {
+    requestAnimationFrame(frame);
+    if (document.hidden) { clock.getDelta(); return; }
+    var dt = Math.min(.05, clock.getDelta()), t = clock.elapsedTime;
+    if (fly) { fly.t = Math.min(1, fly.t + dt / .9); var k = fly.t < .5 ? 2 * fly.t * fly.t : 1 - Math.pow(-2 * fly.t + 2, 2) / 2; target.copy(fly.from).lerp(fly.to, k); zoomGoal = fly.z0 + (fly.z1 - fly.z0) * k; if (fly.t >= 1) fly = null; }
+    zoom += (zoomGoal - zoom) * Math.min(1, dt * 6);
+    placeCam();
+    var hot = S.busyChief || S.meeting;
+    core.scale.setScalar(1 + Math.sin(t * 2) * .05 + (hot ? .14 : 0));
+    halo.scale.setScalar(6.5 + Math.sin(t * 2) * .5 + (hot ? 2.5 : 0));
+    brainLight.intensity = 1.3 + (hot ? .8 : 0) + Math.sin(t * 2) * .15;
+    orbits.forEach(function (o, i) { o.rotation.z += dt * (.4 + i * .25) * (hot ? 3 : 1); });
+    floorRings.forEach(function (r, i) { r.rotation.z += dt * (i % 2 ? -.15 : .2) * (hot ? 3 : 1); });
+    codeTex.offset.y = (codeTex.offset.y + dt * .35) % 1;
+    TEAMS.forEach(function (tm) { var r = rooms[tm.id]; r.dashTex.offset.x = (r.dashTex.offset.x - dt * (r.busy ? 1.4 : .25)) % 1; });
+    Object.keys(people).forEach(function (id) {
+      var p = people[id], ph = p.phase + t;
+      if (p.walk) {
+        var w = p.walk, tgt = w.pts[w.i], pos = p.root.position, dir = tgt.clone().sub(pos); dir.y = 0; var dist = dir.length(), step = dt * 3.6;
+        if (dist <= step) { pos.copy(tgt); w.i++; if (w.i >= w.pts.length) { p.walk = null; if (w.done) w.done(); } }
+        else { dir.normalize(); pos.addScaledVector(dir, step); p.root.rotation.y = Math.atan2(dir.x, dir.z) + Math.PI; }
+        var sw = Math.sin(t * 11) * .55; p.legs[0].thigh.rotation.x = sw; p.legs[1].thigh.rotation.x = -sw; p.legs[0].knee.rotation.x = -Math.max(0, -sw) * .8; p.legs[1].knee.rotation.x = -Math.max(0, sw) * .8; p.arms[0].rotation.x = -sw * .7; p.arms[1].rotation.x = sw * .7;
+      } else if (p.mode === 'work') { p.arms[0].rotation.x = 1.05 + Math.sin(ph * 16) * .12; p.arms[1].rotation.x = 1.05 + Math.cos(ph * 15) * .12; p.neck.rotation.y = Math.sin(ph * .7) * .15; p.upper.position.y = Math.abs(Math.sin(ph * 8)) * .012; }
+      else if (p.mode === 'sleep') { p.upper.position.y = Math.sin(ph * 1.6) * .02; p.zs.forEach(function (z, i) { var k2 = (ph * .35 + i * .5) % 1; z.position.set(.25 + k2 * .5, 1.75 + k2 * 1.1, .1); z.material.opacity = Math.sin(k2 * Math.PI); z.scale.setScalar(.3 + k2 * .3); }); }
+      else if (p.mode === 'stand') { p.upper.rotation.y = Math.sin(ph * .8) * .12; if (id === 'chief') { p.arms[1].rotation.x = hot ? -0.9 + Math.sin(t * 6) * .3 : 0; } }
+      if (p.sel.visible) p.sel.material.opacity = .55 + Math.sin(t * 4) * .35;
+    });
+    for (var i = packets.length - 1; i >= 0; i--) { var pk = packets[i]; pk.t += dt / pk.dur; var u = Math.min(1, pk.t), q = 1 - u; pk.m.position.set(pk.a.x * q * q + pk.mid.x * 2 * q * u + pk.b.x * u * u, 1.2 + Math.sin(u * Math.PI) * 3, pk.a.z * q * q + pk.mid.z * 2 * q * u + pk.b.z * u * u); if (u >= 1) { scene.remove(pk.m); packets.splice(i, 1); } }
+    renderer.render(scene, cam);
+    placeLabels();
+    if (t - lastMini > .25) { lastMini = t; drawMini(); }
+  }
+  function resize() { renderer.setSize(canvas.clientWidth, canvas.clientHeight, false); placeCam(); labels.forEach(function (l) { l.w = 0; }); }
+  window.addEventListener('resize', resize); resize();
+  zoomGoal = 1; zoom = .45;
+  sync(); frame();
+  return { ok: true, sync: function () { sync(); }, dispatch: function (id) { packet(EMP[id].team, false); }, returnPacket: function (id) { packet(EMP[id].team, true); }, gather: gather, disperse: disperse, focus: focus, debug: { people: people, rooms: rooms, cam: cam, renderer: renderer } };
+})();
+
+/* ================= panels ================= */
+function teamStats(t) {
+  var ts = tasks(function (x) { return EMP[x.emp] && EMP[x.emp].team === t.id; }), day = new Date(); day.setHours(0, 0, 0, 0);
+  var today = ts.filter(function (x) { return x.at >= day.getTime(); }).length;
+  var dn = ts.filter(function (x) { return x.doneAt && x.status !== 'error' && x.status !== 'stopped'; }), avg = dn.length ? Math.round(dn.reduce(function (a, x) { return a + Math.max(0, x.doneAt - x.at); }, 0) / dn.length / 1000) : 0;
+  var spark = []; for (var i = 6; i >= 0; i--) { var d0 = day.getTime() - i * 864e5; spark.push(ts.filter(function (x) { return x.at >= d0 && x.at < d0 + 864e5; }).length); }
+  return { today: today, run: t.members.filter(isWorking).length, avg: avg, spark: spark, list: ts };
+}
+function sparkSVG(a, c) { var mx = Math.max.apply(null, a.concat([1])); var pts = a.map(function (v, i) { return (i * 100 / 6).toFixed(1) + ',' + (16 - v / mx * 14).toFixed(1); }).join(' '); return '<svg viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="' + c + '" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>'; }
+function fmtDur(s) { if (!s) return '—'; if (s < 60) return s + ' ث'; return Math.round(s / 60) + ' د'; }
+function statusOf(id) { if (isWorking(id)) return ['working', 'يشتغل']; if (waiting(id)) return ['review', 'ينتظرك']; return ['idle', 'نايم']; }
+function avHTML(e, size) { return '<span class="av" style="background:' + colorOf(e) + (size ? ';width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * .42) + 'px' : '') + '">' + esc(e.name.charAt(0)) + '</span>'; }
+function personRow(id) { var e = EMP[id], st = statusOf(id), cur = tasks(function (t) { return t.emp === id; })[0];
+  return '<button class="person" type="button" data-open="emp:' + id + '"><span class="av' + (st[0] === 'idle' ? ' sleep' : '') + '" style="background:' + colorOf(e) + '">' + esc(e.name.charAt(0)) + '</span><span class="grow"><b>' + esc(e.name) + '</b>' + (e.lead ? '<span class="lead">قائد</span>' : '') + '<small>' + esc(e.title) + (cur ? ' · ' + esc(cur.title) : '') + '</small></span><span class="st ' + st[0] + '">' + st[1] + '</span></button>'; }
+function ringSVG(c) { return '<svg class="ring" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" stroke="rgba(255,255,255,.1)"/><circle class="spin" cx="13" cy="13" r="10" stroke="' + c + '" stroke-dasharray="20 43" stroke-linecap="round"/></svg>'; }
+function taskCard(t, open) {
+  var e = empOf(t), c = colorOf(e), r = running[t.id];
+  var body = r ? (r.text ? md(r.text) : '<span class="typing"><i></i><i></i><i></i> ' + (r.step || 'يفكّر…') + '</span>') : md(t.result || '');
+  var acts = '';
+  if (r) acts = '<button class="btn" type="button" data-stop="' + t.id + '">وقّفه</button>';
+  else if (t.status === 'review') acts = '<button class="btn btn-ok" type="button" data-approve="' + t.id + '">اعتمد</button><button class="btn" type="button" data-revise="' + t.id + '">رجّعه بملاحظات</button><button class="btn" type="button" data-copy="' + t.id + '">انسخ</button>';
+  else if (t.status === 'done') acts = '<button class="btn" type="button" data-copy="' + t.id + '">انسخ</button><button class="btn" type="button" data-review="' + t.id + '">خلّ راشد يراجعه</button>';
+  return '<details class="task" data-task="' + t.id + '"' + (open ? ' open' : '') + '><summary>' + (r ? ringSVG(c) : avHTML(e, 26)) +
+    '<span class="grow"><span class="tt">' + esc(t.title) + '</span><span class="meta">' + esc(e.name) + ' · ' + ago(t.at) + ' · ' + (FROM[t.from] || '') + '</span></span><span class="st ' + t.status + '">' + (ST[t.status] || '') + '</span></summary>' +
+    '<div class="body"><div class="md">' + body + '</div>' + (acts ? '<div class="actions">' + acts + '</div>' : '') + '<div class="revbox" hidden><textarea rows="3" placeholder="وش تبي يتعدل؟"></textarea><div class="actions"><button class="btn btn-acc" type="button" data-sendrev="' + t.id + '">رجّعه</button></div></div></div></details>';
+}
+function panelHead(icHTML, icBg, title, sub) { return '<div class="shead"><span class="ic" style="background:' + icBg + '">' + icHTML + '</span><div class="grow"><h2>' + title + '</h2><div class="sub">' + sub + '</div></div><button class="x" type="button" data-close aria-label="سكّر"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'; }
+var EX = { dev: 'افحصوا سرعة الموقع على الجوال', ops: 'كم طلب ما وصله عرض اليوم؟', sales: 'خطة لإقناع 10 محلات هالأسبوع', fin: 'كم محل نحتاج عشان نغطي مصاريفنا؟', mkt: 'حملة أسبوع الإطلاق', cre: 'أفكار 3 فيديوهات قصيرة', sup: 'ردود جاهزة لأشهر 10 أسئلة', hr: 'وزّعوا مهام الأسبوع على فريق الطلاب' };
+function renderPanel() {
+  var side = $('#side'), p = S.panel;
+  document.body.classList.toggle('sheet', !!p);
+  if (!p) { side.classList.remove('open'); side.setAttribute('aria-hidden', 'true'); side.dataset.p = ''; return; }
+  var openSet = {}, drafts = {}, focusId = document.activeElement && side.contains(document.activeElement) ? document.activeElement.id : '';
+  side.querySelectorAll('details[open]').forEach(function (d) { openSet[d.dataset.task] = 1; }); side.querySelectorAll('textarea[id]').forEach(function (x) { drafts[x.id] = x.value; });
+  var same = side.dataset.p === p, keepScroll = same ? ($('.sbody', side) || {}).scrollTop : 0;
+  var h = '', warn = S.sampleOK === 'none' ? '<div class="note warn">الفريق يشتغل من داخل حسابك في Claude. افتح المقر من رابطه في Claude وسجّل دخولك.</div>' : '';
+  if (p.indexOf('team:') === 0) {
+    var t = TEAM[p.slice(5)], st = teamStats(t), lead = EMP[t.members[0]];
+    h = panelHead(svgI(t.id), t.color, esc(t.name), 'القائد: ' + esc(lead.name) + ' · ' + t.members.length + ' موظفين') + '<div class="sbody">' + warn +
+      '<div class="stats"><div class="stat"><small>مهام اليوم</small><b>' + st.today + '</b>' + sparkSVG(st.spark, t.color) + '</div><div class="stat"><small>يشتغل الحين</small><b>' + st.run + '</b>' + sparkSVG([0, 1, 0, 1, 1, 0, st.run], '#FFB347') + '</div><div class="stat"><small>متوسط الإنجاز</small><b>' + fmtDur(st.avg) + '</b>' + sparkSVG(st.spark.slice().reverse(), '#7FE7FF') + '</div></div>' +
+      '<div class="sec"><h3>الأدوات <span>' + t.tools.filter(function (x) { return x[2] && S.tools; }).length + ' متصلة بالمقر</span></h3><div class="tools">' + t.tools.map(function (x) { var on = x[2] && S.tools; return '<div class="tool"><span class="tl" style="background:' + t.color + '">' + x[0] + '</span><span class="grow"><b>' + esc(x[1]) + '</b><small class="' + (on ? 'on' : '') + '">' + (on ? 'متصل · يقرأ حي' : x[2] ? 'يحتاج سماحك' : 'عبر محادثة Claude') + '</small></span></div>'; }).join('') + '</div></div>' +
+      '<div class="sec"><h3>المهارات</h3><div class="skills">' + t.members.map(function (id) { var e = EMP[id], n = st.list.filter(function (x) { return x.emp === id; }).length, w = isWorking(id); return e.skills.slice(0, 2).map(function (s, i) { var pc = Math.min(100, 20 + n * 18 - i * 6); return '<div class="skill"><span class="grow">' + esc(s) + '</span><span class="bar"><i style="width:' + Math.max(8, pc) + '%;background:' + (w ? t.color : '#4B567A') + '"></i></span><span class="pc">' + (w ? 'شغّال' : 'خامل') + '</span></div>'; }).join(''); }).join('') + '</div></div>' +
+      '<div class="sec"><h3>الفريق</h3><div style="display:flex;flex-direction:column;gap:7px">' + t.members.map(personRow).join('') + '</div></div>' +
+      '<div class="sec"><h3>عط الفريق مهمة</h3><textarea id="team-ask" rows="3" placeholder="مثلاً: ' + esc(EX[t.id]) + '">' + esc(drafts['team-ask'] || '') + '</textarea><div class="actions"><button class="btn btn-acc" type="button" data-teamask="' + t.id + '">أرسلها عن طريق راشد</button></div></div>' +
+      (st.list.length ? '<div class="sec"><h3>آخر شغلهم</h3><div style="display:flex;flex-direction:column;gap:7px">' + st.list.slice(0, 6).map(function (x) { return taskCard(x, openSet[x.id]); }).join('') + '</div></div>' : '') + '</div>';
+  } else if (p.indexOf('emp:') === 0) {
+    var id = p.slice(4), e = EMP[id], tm = TEAM[e.team], st2 = statusOf(id), mine = tasks(function (x) { return x.emp === id; });
+    h = panelHead('<span style="font-family:var(--display);font-weight:700;color:#0B1022;font-size:17px">' + esc(e.name.charAt(0)) + '</span>', tm.color, esc(e.name) + (e.lead ? ' <span class="lead">قائد</span>' : ''), esc(e.title) + ' · ' + esc(tm.name) + ' · <span class="st ' + st2[0] + '">' + st2[1] + '</span>') + '<div class="sbody">' + warn +
+      '<div class="sec"><h3>مهاراته</h3><div class="chips">' + e.skills.map(function (s) { return '<span class="chip" style="border-color:' + tm.color + '66">' + esc(s) + '</span>'; }).join('') + (e.tools.indexOf('db') >= 0 ? '<span class="chip" style="border-color:#3DD68C88">يقرأ بيانات وينه الحية</span>' : '') + '</div></div>' +
+      '<div class="sec"><h3>ذوقه في الشغل</h3><ul class="taste">' + tm.taste.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="sec"><h3>عطه شغل مباشر</h3><textarea id="emp-ask" rows="3" placeholder="وش تبي من ' + esc(e.name) + '؟">' + esc(drafts['emp-ask'] || '') + '</textarea><div class="actions"><label class="check"><input type="checkbox" id="emp-polish" checked> خلّ راشد يرتّب كلامي أول</label><span class="grow"></span><button class="btn btn-acc" type="button" data-empask="' + id + '">' + (isWorking(id) ? 'زيده شغل' : 'صحّه وشغّله') + '</button></div></div>' +
+      (mine.length ? '<div class="sec"><h3>شغله</h3><div style="display:flex;flex-direction:column;gap:7px">' + mine.slice(0, 8).map(function (x, i) { return taskCard(x, openSet[x.id] || (!same && i === 0 && (running[x.id] || x.status === 'review'))); }).join('') + '</div></div>' : '') + '</div>';
+  } else if (p === 'tasks') {
+    var all = tasks(), G = { working: all.filter(function (x) { return x.status === 'working'; }), review: all.filter(function (x) { return x.status === 'review'; }), done: all.filter(function (x) { return x.status === 'done'; }), other: all.filter(function (x) { return x.status === 'error' || x.status === 'stopped'; }) }, F = S.filter;
+    var tabs = [['all', 'الكل', all.length], ['working', 'يشتغل', G.working.length], ['review', 'ينتظرك', G.review.length], ['done', 'خلّص', G.done.length]];
+    var sec = function (k, label, col) { var l = G[k]; if (!l.length || (F !== 'all' && F !== k)) return ''; return '<div class="grp"><i style="background:' + col + '"></i>' + label + ' · ' + l.length + '</div>' + l.slice(0, 40).map(function (x) { return taskCard(x, openSet[x.id]); }).join(''); };
+    h = panelHead(svgI('board'), '#B18CFF', 'لوحة المهام', all.length + ' مهمة · ' + G.working.length + ' تشتغل الحين') + '<div class="sbody">' + warn +
+      '<div class="ftabs">' + tabs.map(function (x) { return '<button type="button" data-filter="' + x[0] + '" aria-pressed="' + (F === x[0]) + '">' + x[1] + ' ' + x[2] + '</button>'; }).join('') + '</div>' +
+      (all.length ? sec('working', 'تشتغل الحين', '#FFB347') + sec('review', 'تنتظر موافقتك', '#B18CFF') + sec('done', 'خلصت', '#3DD68C') + (F === 'all' ? sec('other', 'توقفت', '#FF6B5B') : '') : '<div class="empty"><b>ما في مهام للحين</b>قول لراشد وش تبي من تحت، وهو يوزّعها.</div>') + '</div>';
+  } else if (p === 'calendar') {
+    var d0 = new Date(); d0.setHours(0, 0, 0, 0); d0.setDate(d0.getDate() - d0.getDay() + S.calOff * 7);
+    var DN = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'], today = new Date(); today.setHours(0, 0, 0, 0);
+    var cells = '';
+    for (var i = 0; i < 7; i++) { var d = new Date(d0.getTime() + i * 864e5), a = d.getTime(), b = a + 864e5, evs = tasks(function (x) { return x.at >= a && x.at < b; }), future = a >= today.getTime();
+      cells += '<div class="day' + (a === today.getTime() ? ' today' : '') + '"><h5>' + DN[i] + '<b>' + d.getDate() + '</b></h5>' + (future ? '<div class="ev rt" style="--c:#7FE7FF">7:37 جولة الصبح</div>' : '') + evs.slice(0, 5).map(function (x) { var e2 = empOf(x); return '<div class="ev" style="--c:' + colorOf(e2) + '" title="' + esc(x.title) + '">' + esc(e2.name + ': ' + x.title) + '</div>'; }).join('') + (evs.length > 5 ? '<div class="ev">+' + (evs.length - 5) + '</div>' : '') + '</div>'; }
+    h = panelHead(svgI('cal'), '#7FE7FF', 'التقويم', d0.toLocaleDateString('ar-OM', { day: 'numeric', month: 'long' }) + ' إلى ' + new Date(d0.getTime() + 6 * 864e5).toLocaleDateString('ar-OM', { day: 'numeric', month: 'long' })) + '<div class="sbody"><div class="actions" style="margin:0"><button class="btn" type="button" data-cal="-1">اللي قبل</button><button class="btn" type="button" data-cal="0">هالأسبوع</button><button class="btn" type="button" data-cal="1">الجاي</button></div><div class="tw"><div class="cal" style="min-width:340px">' + cells + '</div></div><div class="note">كل يوم 7:37 الصبح الفريق يسوي جولة على بيانات وينه الحقيقية ويترك تقاريره في لوحة المهام، حتى لو المقر مسكّر.</div></div>';
+  } else if (p === 'brain') {
+    var notes = brainNotes();
+    h = panelHead(svgI('brain'), '#7FE7FF', 'العقل المشترك', notes.length + ' ملاحظة · كل الموظفين يقرونها قبل ما يشتغلون') + '<div class="sbody">' +
+      '<div class="sec"><h3>أضف شي لازم الكل يعرفه</h3><textarea id="brain-add" rows="2" placeholder="مثلاً: سعر الاشتراك 15 ر.ع وأول شهر مجاني">' + esc(drafts['brain-add'] || '') + '</textarea><div class="actions"><button class="btn btn-acc" type="button" data-addnote>احفظ في العقل</button></div></div>' +
+      (notes.length ? notes.map(function (n) { var by = n.by === 'you' ? 'أنت' : (EMP[n.by] || {}).name || 'الفريق'; return '<div class="memo"><span class="grow">' + esc(n.text) + '<small>' + esc(by) + ' · ' + ago(n.at) + '</small></span><button class="del" type="button" data-delnote="' + n.id + '">' + (S.confirmDel === n.id ? 'متأكد؟ امسح' : 'امسح') + '</button></div>'; }).join('') : '<div class="empty"><b>العقل فاضي</b>الموظفين يحفظون فيه القرارات المهمة تلقائياً بعد كل مهمة.</div>') + '</div>';
+  } else if (p === 'chief') {
+    h = panelHead(svgI('chief', '#2A1404'), 'linear-gradient(135deg,#FFC37A,#F29B3F)', 'مكتب راشد', 'رئيس الفريق · يصحّح ويوزّع على ' + ORDER.length + ' موظف') + '<div class="sbody">' + warn +
+      '<div class="actions" style="margin:0"><button class="btn" type="button" data-meet' + (S.meeting ? ' disabled' : '') + '>اجمع الفريق عند العقل</button></div>' +
+      (S.chat.length ? '' : '<div class="empty"><b>راشد جاهز</b>اكتب له تحت أي فكرة، حتى لو مستعجل. هو يصحّحها، يقسّمها، ويوزّعها على الأقسام بالبرومبت المناسب لكل موظف.</div>') +
+      S.chat.map(function (m) {
+        if (m.role === 'you') return '<div class="msg you"><div class="bub">' + esc(m.text).replace(/\n/g, '<br>') + '</div></div>';
+        var x = '<div class="msg"><span class="av" style="background:linear-gradient(135deg,#FFC37A,#F29B3F)">ر</span><div class="bub"><div class="who">راشد' + (m.meeting ? ' · ملخص الاجتماع' : '') + '</div><div class="md">' + md(m.text) + '</div>';
+        if (m.corrected) x += '<div class="fix"><b>طلبك بعد ما رتّبته</b>' + esc(m.corrected) + (m.fixes && m.fixes.length ? '<ul>' + m.fixes.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+        if (m.assignments && m.assignments.length) x += m.assignments.map(function (a) { var tk = S.tasks[a.taskId] || { status: 'working' }, e3 = EMP[a.emp] || EMP.chief; return '<button class="arow" type="button" data-open="emp:' + a.emp + '">' + avHTML(e3, 22) + '<b style="font-size:12.5px">' + esc(e3.name) + '</b><span class="t">' + esc(a.title) + '</span><span class="st ' + tk.status + '">' + (ST[tk.status] || '') + '</span></button>'; }).join('');
+        return x + '</div></div>';
+      }).join('') + (S.busyChief ? '<div class="msg"><span class="av" style="background:linear-gradient(135deg,#FFC37A,#F29B3F)">ر</span><div class="bub"><span class="typing"><i></i><i></i><i></i> راشد يرتّب ويوزّع…</span></div></div>' : '') + (S.meeting ? '<div class="note">الفريق مجتمع عند العقل…</div>' : '') + '</div>';
+  }
+  side.innerHTML = h; side.dataset.p = p;
+  side.classList.add('open'); side.setAttribute('aria-hidden', 'false');
+  var sb = $('.sbody', side); if (sb) sb.scrollTop = p === 'chief' ? sb.scrollHeight : keepScroll || 0;
+  if (focusId && document.getElementById(focusId)) { var fe = document.getElementById(focusId); fe.focus(); try { fe.setSelectionRange(fe.value.length, fe.value.length); } catch (e4) {} }
+}
+var liveT = 0;
+function liveRender() { if (liveT) return; liveT = requestAnimationFrame(function () { liveT = 0; Object.keys(running).forEach(function (id) { var r = running[id]; document.querySelectorAll('details[data-task="' + id + '"] .md').forEach(function (b) { b.innerHTML = r.text ? md(r.text) : '<span class="typing"><i></i><i></i><i></i> ' + (r.step || 'يفكّر…') + '</span>'; }); }); }); }
+function openPanel(p) {
+  S.panel = p || null;
+  if (p && p.indexOf('emp:') === 0) S.unseen[p.slice(4)] = false;
+  var v = !p ? 'office' : p.indexOf(':') < 0 ? p : '';
+  document.querySelectorAll('.views button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === v)); });
+  if (World.ok && p) { if (p.indexOf('team:') === 0) World.focus(p.slice(5)); else if (p.indexOf('emp:') === 0) World.focus(EMP[p.slice(4)].team); else if (p === 'brain' || p === 'chief') World.focus('brain'); }
+  render();
+}
+function render() {
+  var run = Object.keys(running).length, rev = tasks(function (t) { return t.status === 'review'; }).length, busy = ORDER.filter(isWorking).length + (S.busyChief ? 1 : 0);
+  $('#live').textContent = (ORDER.length + 1) + ' موظف · ' + busy + ' يشتغلون';
+  $('#n-tasks').textContent = run + rev;
+  $('#orb').classList.toggle('busy', S.busyChief || S.meeting);
+  $('#dockwho').textContent = S.busyChief ? 'راشد يوزّع الشغل…' : S.meeting ? 'اجتماع عند العقل…' : 'راشد يسمعك';
+  $('#send').disabled = S.busyChief;
+  document.querySelectorAll('.tiers button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.tier === S.tier)); });
+  World.sync();
+  renderPanel();
+}
+var toastT; function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('on'); }, 2800); }
+
+/* ================= events ================= */
+document.addEventListener('click', function (ev) {
+  var x;
+  if ((x = ev.target.closest('[data-close]'))) { openPanel(null); return; }
+  if ((x = ev.target.closest('[data-open]'))) { openPanel(x.dataset.open); return; }
+  if ((x = ev.target.closest('.views button'))) { openPanel(x.dataset.view === 'office' ? null : x.dataset.view); return; }
+  if ((x = ev.target.closest('[data-tier]'))) { S.tier = x.dataset.tier; LS.set('hq.tier', S.tier); render(); toast({ quick: 'سريع: ردود أسرع وأقصر', default: 'متوازن', complex: 'عميق: يفكرون أطول ويطلع شغل أقوى' }[S.tier]); return; }
+  if ((x = ev.target.closest('[data-filter]'))) { S.filter = x.dataset.filter; render(); return; }
+  if ((x = ev.target.closest('[data-cal]'))) { S.calOff = +x.dataset.cal === 0 ? 0 : S.calOff + +x.dataset.cal; render(); return; }
+  if ((x = ev.target.closest('[data-stop]'))) { var r = running[x.dataset.stop]; if (r) r.ctl.abort(); return; }
+  if ((x = ev.target.closest('[data-approve]'))) { approve(x.dataset.approve); return; }
+  if ((x = ev.target.closest('[data-revise]'))) { var box = x.closest('.body').querySelector('.revbox'); box.hidden = !box.hidden; if (!box.hidden) box.querySelector('textarea').focus(); return; }
+  if ((x = ev.target.closest('[data-sendrev]'))) { var v = x.closest('.revbox').querySelector('textarea').value.trim(); if (!v) { toast('اكتب وش تبي يتعدل.'); return; } revise(x.dataset.sendrev, v); render(); return; }
+  if ((x = ev.target.closest('[data-copy]'))) { var t = S.tasks[x.dataset.copy]; try { navigator.clipboard.writeText(t.result).then(function () { toast('انسخ.'); }, function () { toast('ما قدرت أنسخ، ظلّل النص وانسخه.'); }); } catch (e) { toast('ما قدرت أنسخ، ظلّل النص وانسخه.'); } return; }
+  if ((x = ev.target.closest('[data-review]'))) { var tt = S.tasks[x.dataset.review]; askChief('راجع شغل ' + empOf(tt).name + ' "' + tt.title + '" بعين ناقدة: وش القوي، وش الضعيف، ووش لازم يتعدل قبل لا نستخدمه؟ إذا يحتاج تعديل رجّعه لنفس الموظف بتعليمات واضحة.\n\nالشغل:\n' + String(tt.result || '').slice(0, 6000)); return; }
+  if ((x = ev.target.closest('[data-teamask]'))) { var v2 = ($('#team-ask').value || '').trim(); if (!v2) { toast('اكتب المهمة أول.'); return; } $('#team-ask').value = ''; askChief('للفريق ' + TEAM[x.dataset.teamask].name + ' فقط (وزّعها على موظفينه حسب تخصصاتهم): ' + v2); return; }
+  if ((x = ev.target.closest('[data-empask]'))) { var v3 = ($('#emp-ask').value || '').trim(); if (!v3) { toast('اكتب المهمة أول.'); return; } $('#emp-ask').value = ''; direct(x.dataset.empask, v3, $('#emp-polish').checked); render(); return; }
+  if ((x = ev.target.closest('[data-addnote]'))) { var v4 = ($('#brain-add').value || '').trim(); if (!v4) return; $('#brain-add').value = ''; Store.note({ id: uid(), text: v4.slice(0, 400), by: 'you', at: now() }); render(); return; }
+  if ((x = ev.target.closest('[data-delnote]'))) { var nid = x.dataset.delnote; if (S.confirmDel === nid) { S.confirmDel = null; Store.unnote(nid); } else { S.confirmDel = nid; setTimeout(function () { if (S.confirmDel === nid) { S.confirmDel = null; render(); } }, 4000); } render(); return; }
+  if ((x = ev.target.closest('[data-meet]'))) { meeting(); return; }
+  if (ev.target.closest('#orb')) { openPanel(S.panel === 'chief' ? null : 'chief'); return; }
+});
+var cmd = $('#cmd');
+function grow() { cmd.style.height = 'auto'; cmd.style.height = Math.min(140, cmd.scrollHeight) + 'px'; }
+cmd.addEventListener('input', grow);
+cmd.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); $('#dock').requestSubmit(); } });
+$('#dock').addEventListener('submit', function (ev) { ev.preventDefault(); var v = cmd.value.trim(); if (!v) return; if (needClaude()) return; cmd.value = ''; grow(); askChief(v); });
+$('#emps').innerHTML = ORDER.map(function (id) { return '<option value="' + esc(EMP[id].name) + '">' + esc(EMP[id].title + ' · ' + TEAM[EMP[id].team].name) + '</option>'; }).join('') + TEAMS.map(function (t) { return '<option value="' + esc(t.name) + '">قسم</option>'; }).join('');
+$('#find').addEventListener('change', function () { var v = this.value.trim(); var id = ORDER.filter(function (k) { return EMP[k].name === v; })[0]; if (id) { openPanel('emp:' + id); this.value = ''; return; } var tm = TEAMS.filter(function (t) { return t.name === v || (v.length > 2 && t.name.indexOf(v) >= 0); })[0]; if (tm) { openPanel('team:' + tm.id); this.value = ''; } });
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && S.panel) openPanel(null); });
+
+/* ================= boot ================= */
+setTimeout(function () { $('#boot').classList.add('out'); }, World.ok ? 400 : 0);
+if (!World.ok) toast('جهازك ما يدعم الرسم ثلاثي الأبعاد، استخدم القوائم فوق.');
+render();
+window.__hq = { S: S, World: World };
+var C = window.claude;
+if (!C || typeof C.use !== 'function') { S.sampleOK = 'none'; render(); }
+else {
+  C.use('sample').then(function (sm) { S.sample = sm; S.sampleOK = sm ? 'ok' : 'none'; if (sm && sm.limits) sm.limits().then(function (l) { S.canTools = !!(l && l.tools); S.tools = !!(S.mcp && S.canTools); render(); }).catch(function () {}); render(); }).catch(function () { S.sampleOK = 'none'; render(); });
+  C.use('mcp').then(function (m) { S.mcp = m; S.tools = !!(m && S.canTools); render(); }).catch(function () {});
+  Promise.all([C.use('db'), C.use('user')]).then(function (r) {
+    var db = r[0]; if (!db) return; S.db = db;
+    var first = true;
+    db.collection('tasks').orderBy('at', 'desc').limit(200).onSnapshot(function (snap) {
+      var seen = {};
+      snap.docs.forEach(function (d) { var t = d.data(); if (!t || !t.id) return; seen[t.id] = 1; if (running[t.id]) return; var c = Object.assign({}, t); if (!EMP[c.emp]) c.emp = 'chief'; S.tasks[c.id] = c; });
+      Object.keys(S.tasks).forEach(function (k) { if (!seen[k] && !running[k] && S.tasks[k].status !== 'working') delete S.tasks[k]; });
+      if (first && !snap.metadata.fromCache) {
+        first = false;
+        Object.keys(S.tasks).forEach(function (k) { var t = S.tasks[k]; if (t.status === 'working' && !running[k] && now() - t.at > 10 * 60 * 1000) { t.status = 'stopped'; t.result = (t.result || '') + '\n\n_انقطع لأن الصفحة تسكّرت قبل لا يخلص._'; db.doc('tasks/' + k).update({ status: 'stopped', result: t.result }).catch(function () {}); } });
+      }
+      render();
+    }, function () {});
+    db.collection('chat').orderBy('at', 'desc').limit(60).onSnapshot(function (snap) {
+      var mine = {}; S.chat.forEach(function (m) { mine[m.id] = m; });
+      snap.docs.forEach(function (d) { var m = d.data(); if (m && m.id) mine[m.id] = m; });
+      S.chat = Object.keys(mine).map(function (k) { return mine[k]; }).sort(function (a, b) { return a.at - b.at; }).slice(-60);
+      render();
+    }, function () {});
+    db.collection('brain').orderBy('at', 'desc').limit(120).onSnapshot(function (snap) {
+      var nb = {}; snap.docs.forEach(function (d) { var n = d.data(); if (n && n.id) nb[n.id] = n; }); S.brain = nb; render();
+    }, function () {});
+  }).catch(function () {});
+}
+setInterval(function () { if (!Object.keys(running).length && S.panel === 'tasks') renderPanel(); }, 60000);
+})();
+</script>
