@@ -1,0 +1,23 @@
+{
+  "name": "وينه",
+  "short_name": "وينه",
+  "description": "اكتب القطعة اللي تدوّرها، ومحلات صناعية المعبيلة ترسل لك أسعارها.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/?source=homescreen#driver",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B1940",
+  "theme_color": "#0B1940",
+  "categories": ["shopping", "auto", "business"],
+  "icons": [
+    { "src": "https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "اطلب قطعة", "url": "/#driver", "icons": [{ "src": "https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/icon-192.png", "sizes": "192x192" }] },
+    { "name": "لوحة المحل", "url": "/#shop", "icons": [{ "src": "https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

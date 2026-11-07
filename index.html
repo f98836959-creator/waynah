@@ -3,10 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0E1F4A">
+<meta name="theme-color" content="#0B1940">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="وينه">
+<meta name="application-name" content="وينه">
 <meta name="description" content="وينه: اكتب القطعة اللي تدوّرها، ومحلات صناعية المعبيلة ترسل لك أسعارها.">
-<link rel="icon" href="img/head.webp" type="image/webp">
-<link rel="apple-touch-icon" href="img/head.webp">
+<link rel="icon" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" sizes="180x180" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/icon-180.png">
 <title>وينه</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1922,6 +1928,9 @@ document.addEventListener('change', function (ev) {
 document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { if (S.d.sheet || S.d.picker) { S.d.sheet = false; S.d.picker = false; render(); } } });
 window.addEventListener('hashchange', render);
 setInterval(function () { if (!document.activeElement || ['INPUT', 'TEXTAREA'].indexOf(document.activeElement.tagName) < 0) render(); }, 30000);
+
+/* ---------------- install as an app ---------------- */
+try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(function () {}); } catch (e) {}
 
 /* ---------------- boot ---------------- */
 render();
