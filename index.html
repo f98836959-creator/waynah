@@ -750,11 +750,11 @@ var Buddy = {
   },
   loadIntro: function () { if (this.introReady || this.introLoading) return; this._intro(); },
   show: function (on) { if (this.el) this.el.style.display = on ? '' : 'none'; },
-  _intro: function () { if (true) { var self = this; this.introLoading = true; var im = new Image(); im.onload = function () { self.introReady = true; if (S.d.view === 'welcome' && self.cur === 'wave') { self.cur = ''; self.pose('intro'); } }; im.src = MZ + 'intro2.webp'; } },
+  _intro: function () { if (true) { var self = this; this.introLoading = true; var im = new Image(); im.onload = function () { self.introReady = true; if (S.d.view === 'welcome' && self.cur === 'wave') { self.cur = ''; self.pose('intro'); } }; im.src = MZ + 'intro3.webp'; } },
   pose: function (p) {
     if (!this.el || p === this.cur) return; this.cur = p;
     var imgs = this.el.querySelectorAll('.pz');
-    for (var i = 0; i < imgs.length; i++) { var im = imgs[i], on = im.dataset.p === p; if (on && im.tagName === 'IMG' && !im.src) im.src = MZ + (p === 'intro' ? 'intro2' : 'm-' + p) + '.webp'; im.classList.toggle('on', on); }
+    for (var i = 0; i < imgs.length; i++) { var im = imgs[i], on = im.dataset.p === p; if (on && im.tagName === 'IMG' && !im.src) im.src = MZ + (p === 'intro' ? 'intro3' : 'm-' + p) + '.webp'; im.classList.toggle('on', on); }
   },
   say: function (t, ms) {
     var b = this.el && this.el.querySelector('.bub'); if (!b) return;
