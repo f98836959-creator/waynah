@@ -1234,7 +1234,7 @@ var Push = {
   ios: /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
   busy: false,
   standalone: function () { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } },
-  supported: function () { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && location.protocol === 'https:'; },
+  supported: function () { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext; },
   state: function (role, ref) {
     if (!ref) return 'none';
     if (!this.supported()) return this.ios && !this.standalone() ? 'install' : 'none';
