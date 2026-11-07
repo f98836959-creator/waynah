@@ -1092,7 +1092,7 @@ var statusPill = function (r) {
 var Driver = {
   view: function () {
     var d = S.d;
-    var v = { welcome: this.welcome, login: this.login, home: this.home, offers: this.offers, chat: this.chat, booked: this.booked, review: this.review, thanks: this.thanks }[d.view] || this.home;
+    var v = { welcome: this.welcome, area: this.area, part: this.part, login: this.login, offers: this.offers, chat: this.chat, booked: this.booked, review: this.review, thanks: this.thanks }[d.view] || this.part;
     var out = '<div class="app v-' + d.view + '">' + v.call(this) + '</div>';
     if (d.sheet) out += this.carSheet();
     if (d.picker) out += this.countrySheet();
