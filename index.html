@@ -622,18 +622,23 @@ body.mapmode .pushon{color:#7BD9A2}
   var vid = document.getElementById('sp-vid'); try { var pp = vid && vid.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {}
   function hide() { gone = true; clearInterval(capT); el.classList.add('out'); setTimeout(function () { try { vid && vid.pause(); } catch (e) {} if (el.parentNode) el.parentNode.removeChild(el); }, 700); }
   function frame() {
-    if (gone) return;
+    if (gone || fin) return;
     var ceil = fin ? 100 : Math.min(goal + 10, 94);
     if (!fin && goal < ceil) goal = Math.min(ceil, goal + 0.04);
     shown += (goal - shown) * (fin ? 0.16 : 0.07);
     if (fin && 100 - shown < 0.8) shown = 100;
     fill.style.width = shown.toFixed(1) + '%'; pct.textContent = Math.round(shown) + '%';
-    if (fin && shown >= 100) { if (Date.now() - t0 > 1000) { setTimeout(hide, 160); return; } }
     requestAnimationFrame(frame);
   }
-  window.Splash = { step: function (v) { if (v > goal) goal = v; }, done: function () { if (fin) return; fin = true; goal = 100; if (document.hidden) hide(); } };
+  // finishing is driven by the clock, not by frame rate, so a busy phone can't hold the splash open
+  window.Splash = { step: function (v) { if (v > goal) goal = v; }, done: function () {
+    if (fin) return; fin = true; goal = 100;
+    fill.style.transition = 'width .45s ease-out'; fill.style.width = '100%'; pct.textContent = '100%';
+    if (document.hidden) { hide(); return; }
+    setTimeout(hide, Math.max(520, 1000 - (Date.now() - t0)));
+  } };
   requestAnimationFrame(frame);
-  setTimeout(function () { window.Splash.done(); }, 8500);
+  setTimeout(function () { window.Splash.done(); }, 7000);
 })();
 </script>
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
