@@ -1548,7 +1548,7 @@ var Driver = {
           '<button class="btn btn-primary btn-sm" data-act="d-choose" data-sid="' + esc(o.shopId) + '">' + (r.chosen === o.shopId ? 'افتح المحادثة' : 'اختار هذا العرض') + '</button></div></div>';
       }).join('') +
       (waiting ? '<div class="waiting"><span class="dots"><i></i><i></i><i></i></span> ننتظر ردود محلات ثانية…</div>' : '') +
-      (r.phone ? pushCard('driver', r.phone, 'خلّ العروض توصلك وأنت برّا', 'نرسل لك إشعار أول ما يرد محل، حتى لو سكّرت وينه.') : '') +
+      (me.full ? pushCard('driver', me.full, 'خلّ العروض توصلك وأنت برّا', 'نرسل لك إشعار أول ما يرد محل، حتى لو سكّرت وينه.') : '') +
       (waiting ? '<button class="btn btn-sm" data-act="d-cancel" data-id="' + r.id + '" style="align-self:center">ألغ الطلب</button>' : '');
   },
   chat: function () {
