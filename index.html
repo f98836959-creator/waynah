@@ -870,12 +870,12 @@ var Remote = {
   set: function (p, d) {
     var parts = p.split('/'), col = parts[0], id = parts[1];
     if (col === 'requests') {
-      var row = { id: id, code: d.code, car: d.car, part: d.part, note: d.note || '', tags: d.tags || [], photo: d.photo || null, status: d.status || 'open', chosen: null, final_price: null, created_at: d.createdAt, declined: {} };
+      var row = { id: id, code: d.code, car: d.car, part: d.part, note: d.note || '', tags: d.tags || [], photo: d.photo || null, status: d.status || 'open', chosen: null, final_price: null, created_at: d.createdAt, declined: {}, phone: d.phone || null };
       this.cache.requests.push(row); this.emit('requests');
       return this.c.from('requests').insert(row).then(this.done('requests'));
     }
     if (col === 'shops') {
-      var srow = { id: id, name: d.name, type: d.type, area: d.area, cats: d.cats || [], brands: d.brands || [], phone_last4: d.phoneLast4 || null, plan: d.plan || 'founder', created_at: d.createdAt, lat: d.lat || null, lng: d.lng || null };
+      var srow = { id: id, name: d.name, type: d.type, area: d.area, cats: d.cats || [], brands: d.brands || [], phone_last4: d.phoneLast4 || null, phone: d.phone || null, plan: d.plan || 'founder', created_at: d.createdAt, lat: d.lat || null, lng: d.lng || null };
       this.cache.shops.push(srow); this.emit('shops');
       return this.c.from('shops').upsert(srow).then(this.done('shops'));
     }
@@ -927,6 +927,25 @@ var Remote = {
       return self.c.storage.from('photos').getPublicUrl(path).data.publicUrl;
     });
   }
+};
+/* real SMS codes through the Supabase 'sms' function; falls back to the in-page 0000 code (demo) */
+var OTP = {
+  demo: {},
+  e164: function (dial, local) { return '+' + dial + String(local || '').replace(/^0+/, ''); },
+  call: function (body) {
+    return fetch(SB_URL + '/functions/v1/sms', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); });
+  },
+  send: function (phone) {
+    var self = this;
+    if (!Store.remote) { self.demo[phone] = true; return Promise.resolve({ ok: true, demo: true }); }
+    return this.call({ action: 'send', phone: phone }).then(function (j) { self.demo[phone] = !!j.demo; return j; }).catch(function () { self.demo[phone] = true; return { ok: true, demo: true, offline: true }; });
+  },
+  verify: function (phone, code) {
+    if (this.demo[phone] || !Store.remote) return Promise.resolve({ ok: code === '0000' });
+    return this.call({ action: 'verify', phone: phone, code: code }).catch(function () { return { ok: false, error: 'offline' }; });
+  },
+  msg: function (e) { return { too_many: 'جربت مرات كثيرة. انتظر 10 دقايق.', expired: 'الرمز انتهى. اطلب رمز جديد.', wrong: 'الرمز غلط. تأكد منه وجرّب مرة ثانية.', no_code: 'اطلب رمز أول.', sms_failed: 'ما قدرنا نرسل الرسالة. جرّب بعد شوي.', offline: 'ما في اتصال. جرّب مرة ثانية.' }[e] || 'صار خطأ. جرّب مرة ثانية.'; }
 };
 var Store = {
   db: null, remote: false, mode: 'local',
@@ -1153,7 +1172,7 @@ var Driver = {
       '<label for="d-phone" class="sr">رقم الجوال</label><input id="d-phone" class="input ltr grow" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="' + (c.iso === 'OM' ? '9XXX XXXX' : 'رقمك') + '" value="' + esc(d.phone) + '" data-bind="d.phone" data-digits="12"></div>' +
       (d.err ? '<p class="err" role="alert">' + esc(d.err) + '</p>' : '<p class="xs muted" style="margin:0">اخترنا ' + esc(c.name) + ' من توقيت جهازك. تقدر تغيّرها.</p>') +
       '<button class="btn btn-primary btn-lg btn-block" data-act="d-send-otp">أرسل الرمز</button>' +
-      '<p class="xs muted" style="text-align:center;margin:0">تجريبي: ما في رسائل SMS حقيقية. الرمز يوصلك كإشعار داخل الصفحة.</p>';
+      '<p class="xs muted" style="text-align:center;margin:0">يوصلك رمز من 4 أرقام برسالة نصية.</p>';
     return '<div class="row">' + backBtn('d-otp-back') + '</div>' +
       '<div style="text-align:center"><img src="' + MZ + 'm-chat.webp" alt="" style="width:120px"></div>' +
       '<h1 style="font-size:24px;text-align:center">اكتب رمز التأكيد</h1>' +
@@ -1299,7 +1318,7 @@ var Shop = {
       '<div class="row" style="direction:ltr"><span class="btn" style="flex-shrink:0;font-family:var(--f-display)">+968</span><label for="s-phone" class="sr">رقم الجوال</label><input id="s-phone" class="input ltr grow" type="tel" inputmode="numeric" placeholder="9XXX XXXX" value="' + esc(r.phone) + '" data-bind="s.reg.phone" data-digits="8"></div>' +
       (r.sent ? '<label class="label" for="s-code">رمز التأكيد</label><input id="s-code" class="input ltr" style="text-align:center;font-size:26px;letter-spacing:.5em" inputmode="numeric" maxlength="4" placeholder="----" value="' + esc(r.code) + '" data-bind="s.reg.code" data-digits="4">' : '') +
       (S.s.err ? '<p class="err" role="alert">' + esc(S.s.err) + '</p>' : '') +
-      '<button class="btn btn-primary btn-lg btn-block" data-act="s-otp">' + (r.sent ? 'تأكيد' : 'أرسل الرمز') + '</button><p class="xs muted" style="text-align:center;margin:0">تجريبي: الرمز يوصلك كإشعار داخل الصفحة.</p>';
+      '<button class="btn btn-primary btn-lg btn-block" data-act="s-otp">' + (r.sent ? 'تأكيد' : 'أرسل الرمز') + '</button><p class="xs muted" style="text-align:center;margin:0">على هذا الرقم توصلك تنبيهات الطلبات برسائل نصية.</p>';
   },
   plan: function () {
     var shop = this.me() || {};
@@ -1542,15 +1561,30 @@ var A = {
   'd-send-otp': function () {
     var d = S.d, len = d.phone.length;
     if (me.iso === 'OM' ? len !== 8 : (len < 7 || len > 12)) { d.err = !len ? 'اكتب رقم جوالك أول.' : (me.iso === 'OM' ? 'رقم عُمان لازم يكون 8 أرقام.' : 'الرقم غير صحيح.'); return; }
-    d.err = ''; d.step = 'otp'; d.code = '';
-    setTimeout(function () { if (S.d.step === 'otp' && S.d.view === 'login') { S.d.banner = 'رمز التأكيد حقك: 0000. اضغط هنا لتعبئته.'; render(); } }, 1300);
+    d.err = ''; d.step = 'otp'; d.code = ''; d.sending = true;
+    var c = COUNTRIES.filter(function (x) { return x.iso === me.iso; })[0] || COUNTRIES[0], full = OTP.e164(c.dial, d.phone);
+    OTP.send(full).then(function (j) {
+      d.sending = false;
+      if (!j.ok) { d.step = 'phone'; d.err = OTP.msg(j.error); render(); return; }
+      if (j.demo) setTimeout(function () { if (S.d.step === 'otp' && S.d.view === 'login') { S.d.banner = 'رمز التأكيد حقك: 0000. اضغط هنا لتعبئته.'; render(); } }, 900);
+      else toast('أرسلنا لك رسالة فيها الرمز.');
+      render();
+    });
   },
   'd-otp-back': function () { S.d.step = 'phone'; S.d.banner = null; S.d.err = ''; },
-  'd-resend': function () { S.d.banner = null; render(); setTimeout(function () { S.d.banner = 'رمز التأكيد حقك: 0000. اضغط هنا لتعبئته.'; render(); }, 1000); },
+  'd-resend': function () { S.d.banner = null; S.d.step = 'phone'; A['d-send-otp'](); },
   'd-banner': function () { if (S.d.view === 'login') S.d.code = '0000'; S.d.banner = null; },
   'd-verify': function () {
-    var d = S.d; if (d.code !== '0000') { d.err = 'الرمز غلط. تأكد منه وجرّب مرة ثانية.'; d.code = ''; return; }
-    me.verified = true; me.phone = d.phone; saveMe(); d.banner = null; d.err = ''; d.view = 'part'; toast('هلا فيك! تأكدنا من رقمك.'); if (d.pending) A['d-submit']();
+    var d = S.d; if (d.code.length !== 4) { d.err = 'اكتب الرمز المكوّن من 4 أرقام.'; return; }
+    var c = COUNTRIES.filter(function (x) { return x.iso === me.iso; })[0] || COUNTRIES[0], full = OTP.e164(c.dial, d.phone);
+    d.err = ''; d.checking = true;
+    OTP.verify(full, d.code).then(function (j) {
+      d.checking = false;
+      if (!j.ok) { d.err = OTP.msg(j.error || 'wrong'); d.code = ''; render(); return; }
+      me.verified = true; me.phone = d.phone; me.full = full; saveMe(); d.banner = null; d.err = ''; d.view = 'part'; toast('هلا فيك! تأكدنا من رقمك.');
+      if (d.pending) A['d-submit']();
+      render();
+    });
   },
   'd-home': function () { S.d.view = 'part'; S.d.err = ''; S.d.cat = null; S.d.part = ''; },
   'd-car': function () { S.d.sheet = true; S.d.cs = { step: 'brand', brand: null, model: null, q: '' }; },
@@ -1567,7 +1601,7 @@ var A = {
     if (!me.verified) { d.pending = true; d.view = 'login'; d.step = 'phone'; d.err = ''; return; }
     d.pending = false;
     var id = 'r' + uid(), code = newCode();
-    var doc = { code: code, car: me.car, part: d.part.trim(), note: d.note.trim(), tags: d.tags.slice(), photo: d.photo || null, status: 'open', createdAt: now(), offers: {}, msgs: {}, chosen: null, finalPrice: null, declined: {} };
+    var doc = { code: code, car: me.car, part: d.part.trim(), note: d.note.trim(), tags: d.tags.slice(), photo: d.photo || null, status: 'open', createdAt: now(), offers: {}, msgs: {}, chosen: null, finalPrice: null, declined: {}, phone: me.full || null };
     Store.set('requests/' + id, doc).then(function () { runDemoShops(id, doc.part); });
     me.reqs = [id].concat(me.reqs).slice(0, 30); saveMe();
     d.rid = id; d.view = 'offers'; d.part = ''; d.cat = null; d.more = false; d.photo = null; d.tags = []; d.note = ''; d.err = ''; d.sort = 'cheap'; Buddy.say(Buddy.line('offers'));
@@ -1603,10 +1637,28 @@ var A = {
   's-reg-next': function () { var r = S.s.reg; if (!r.name.trim()) { S.s.err = 'اكتب اسم المحل.'; return; } if (!r.type) { S.s.err = 'اختر نوع النشاط.'; return; } if (!r.cats.length) { S.s.err = 'اختر قسم واحد على الأقل.'; return; } S.s.err = ''; S.s.view = 'otp'; },
   's-otp': function () {
     var r = S.s.reg;
-    if (!r.sent) { if (r.phone.length !== 8) { S.s.err = r.phone ? 'رقم عُمان لازم يكون 8 أرقام.' : 'اكتب رقم المحل.'; return; } S.s.err = ''; r.sent = true; setTimeout(function () { S.s.banner = 'رمز تأكيد محلك: 0000. اضغط هنا لتعبئته.'; render(); }, 1300); return; }
-    if (r.code !== '0000') { S.s.err = 'الرمز غلط. جرّب مرة ثانية.'; r.code = ''; return; }
+    var full = OTP.e164('968', r.phone);
+    if (!r.sent) {
+      if (r.phone.length !== 8) { S.s.err = r.phone ? 'رقم عُمان لازم يكون 8 أرقام.' : 'اكتب رقم المحل.'; return; }
+      S.s.err = ''; r.sent = true;
+      OTP.send(full).then(function (j) {
+        if (!j.ok) { r.sent = false; S.s.err = OTP.msg(j.error); render(); return; }
+        if (j.demo) setTimeout(function () { if (S.s.view === 'otp') { S.s.banner = 'رمز تأكيد محلك: 0000. اضغط هنا لتعبئته.'; render(); } }, 900);
+        else toast('أرسلنا رسالة فيها الرمز لرقم المحل.');
+        render();
+      });
+      return;
+    }
+    if (r.code.length !== 4) { S.s.err = 'اكتب الرمز المكوّن من 4 أرقام.'; return; }
+    OTP.verify(full, r.code).then(function (j) {
+      if (!j.ok) { S.s.err = OTP.msg(j.error || 'wrong'); r.code = ''; render(); return; }
+      A['s-create'](full); render();
+    });
+  },
+  's-create': function (full) {
+    var r = S.s.reg;
     var id = 's' + uid();
-    Store.set('shops/' + id, { name: r.name.trim(), type: r.type, area: 'صناعية المعبيلة', cats: r.cats, brands: r.brands, phoneLast4: r.phone.slice(-4), plan: 'founder', createdAt: now(), lat: r.loc ? r.loc[0] : 23.6462 + (Math.random() - .5) * .012, lng: r.loc ? r.loc[1] : 58.0992 + (Math.random() - .5) * .014 });
+    Store.set('shops/' + id, { name: r.name.trim(), type: r.type, area: 'صناعية المعبيلة', cats: r.cats, brands: r.brands, phoneLast4: r.phone.slice(-4), phone: full, plan: 'founder', createdAt: now(), lat: r.loc ? r.loc[0] : 23.6462 + (Math.random() - .5) * .012, lng: r.loc ? r.loc[1] : 58.0992 + (Math.random() - .5) * .014 });
     myShop.id = id; LS.set('waynah.shop', myShop); S.s.banner = null; S.s.err = ''; S.s.view = 'plan';
   },
   's-banner': function () { if (S.s.view === 'otp') S.s.reg.code = '0000'; S.s.banner = null; },
