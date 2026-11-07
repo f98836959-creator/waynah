@@ -217,8 +217,11 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 .tile{min-height:var(--tile,76px);border-radius:16px;border:2px solid transparent;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:600;font-size:14px;box-shadow:var(--sh1);transition:transform .2s var(--ease),border-color .2s}
 .tile:hover{transform:translateY(-2px)}
 .tile .en{font-family:var(--f-display);font-size:10px;letter-spacing:.08em;color:var(--accent);direction:ltr}
-.bb{display:grid;place-items:center;width:100%;height:46px;border-radius:12px;background:linear-gradient(160deg,#fff,#eef1f6);box-shadow:inset 0 1px 0 #fff,0 6px 14px -6px rgba(0,0,0,.55);margin-bottom:6px;padding:6px 10px}
-.bb img{max-width:100%;max-height:100%;object-fit:contain}
+.bb{display:grid;place-items:center;width:100%;height:44px;margin-bottom:6px;padding:4px 12px}
+.bb img{max-width:100%;max-height:100%;object-fit:contain;filter:brightness(0) invert(1) drop-shadow(0 2px 6px rgba(0,0,0,.5));opacity:.92;transition:filter .3s,opacity .3s,transform .3s var(--ease)}
+.tile:hover .bb img{opacity:1;transform:scale(1.06)}
+.tile.sel .bb img{filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));opacity:1}
+body:not(.mapmode) .bb img{filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
 .tile .en{display:none}
 .tile.sel{border-color:var(--caramel);box-shadow:var(--sh1),var(--ring)}
 .li{min-height:56px;border-radius:16px;border:2px solid transparent;background:var(--surface);display:flex;align-items:center;gap:12px;padding:0 14px;text-align:right;width:100%;box-shadow:var(--sh1);transition:transform .2s var(--ease),border-color .2s}
@@ -427,7 +430,8 @@ body:not(.mapmode) .clouds{display:none}
 .route-line{stroke:#FFC37A;stroke-width:5;stroke-linecap:round;stroke-dasharray:1 10;filter:drop-shadow(0 0 6px rgba(255,195,122,.8));animation:beam 1s linear infinite}
 
 /* buddy: the mascot that lives on the map */
-#buddy{position:fixed;z-index:34;width:124px;right:8px;top:calc(46vh - 170px);pointer-events:auto;cursor:pointer;user-select:none;-webkit-user-select:none;transition:top .4s,right .4s,width .4s;filter:drop-shadow(0 14px 16px rgba(0,0,0,.5))}
+#buddy{position:fixed;z-index:34;width:124px;right:8px;top:calc(46vh - 170px);pointer-events:auto;cursor:pointer;user-select:none;-webkit-user-select:none;transition:top .4s,right .4s,width .4s;background:transparent}
+#buddy .pz{filter:drop-shadow(0 12px 14px rgba(0,0,0,.45))}
 #buddy .pz{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:bottom;opacity:0;transform:translateY(14px) scale(.9);transition:opacity .35s,transform .5s var(--spring)}
 #buddy .pz.on{opacity:1;transform:none}
 #buddy .fr{position:relative;width:100%;aspect-ratio:1;animation:floatsoft 5s ease-in-out infinite}
@@ -459,9 +463,12 @@ body.mapmode .chip.on{background:var(--btn-acc);color:#2A1404;border-color:trans
 body.mapmode .btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:#F4EEE3}
 body.mapmode .btn-primary{background:var(--btn-acc);color:#2A1404;border-color:transparent;box-shadow:var(--glow-acc)}
 body.mapmode .btn-accent{background:linear-gradient(135deg,#2A56BD,#17337A);color:#fff}
-body.mapmode .back,body.mapmode .li,body.mapmode .tile,body.mapmode .offer,body.mapmode .b.them,body.mapmode .ocard,body.mapmode .stars button{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);color:#F4EEE3}
+body.mapmode .back,body.mapmode .li,body.mapmode .offer,body.mapmode .b.them,body.mapmode .ocard,body.mapmode .stars button{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);color:#F4EEE3}
 body.mapmode .back svg{stroke:#F4EEE3}
 body.mapmode .offer.best{border-color:var(--caramel)}
+body.mapmode .tile{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#F4EEE3;box-shadow:none}
+body.mapmode .tile:hover{background:rgba(255,255,255,.09)}
+body.mapmode .tile.sel{border-color:rgba(255,195,122,.9);background:rgba(242,155,63,.14);box-shadow:none}
 body.mapmode .muted{color:#aab3c9}
 body.mapmode .soft,body.mapmode .b.sys,body.mapmode .thumb,body.mapmode .photo{background:rgba(255,255,255,.08)}
 body.mapmode .composer{background:linear-gradient(to top,rgba(10,18,40,.95) 70%,transparent)}
@@ -706,11 +713,11 @@ var Buddy = {
     el.addEventListener('click', function () { self.el.classList.remove('wiggle'); void self.el.offsetWidth; self.el.classList.add('wiggle'); self.say(SAY.poke[Math.floor(Math.random() * SAY.poke.length)], 2600); });
     setInterval(function () { if (self.el.style.display !== 'none' && document.visibilityState === 'visible') { self.el.classList.remove('wiggle'); void self.el.offsetWidth; self.el.classList.add('wiggle'); } }, 20000);
   },
-  show: function (on) { if (this.el) this.el.style.display = on ? '' : 'none'; if (on && !this.introReady && !this.introLoading) { var self = this; this.introLoading = true; var im = new Image(); im.onload = function () { self.introReady = true; if (S.d.view === 'welcome' && self.cur === 'wave') { self.cur = ''; self.pose('intro'); } }; im.src = MZ + 'intro.webp'; } },
+  show: function (on) { if (this.el) this.el.style.display = on ? '' : 'none'; if (on && !this.introReady && !this.introLoading) { var self = this; this.introLoading = true; var im = new Image(); im.onload = function () { self.introReady = true; if (S.d.view === 'welcome' && self.cur === 'wave') { self.cur = ''; self.pose('intro'); } }; im.src = MZ + 'intro2.webp'; } },
   pose: function (p) {
     if (!this.el || p === this.cur) return; this.cur = p;
     var imgs = this.el.querySelectorAll('.pz');
-    for (var i = 0; i < imgs.length; i++) { var im = imgs[i], on = im.dataset.p === p; if (on && im.tagName === 'IMG' && !im.src) im.src = MZ + (p === 'intro' ? 'intro' : 'm-' + p) + '.webp'; im.classList.toggle('on', on); }
+    for (var i = 0; i < imgs.length; i++) { var im = imgs[i], on = im.dataset.p === p; if (on && im.tagName === 'IMG' && !im.src) im.src = MZ + (p === 'intro' ? 'intro2' : 'm-' + p) + '.webp'; im.classList.toggle('on', on); }
   },
   say: function (t, ms) {
     var b = this.el && this.el.querySelector('.bub'); if (!b) return;
