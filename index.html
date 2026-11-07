@@ -15,10 +15,16 @@
 <link rel="apple-touch-icon" sizes="180x180" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/icon-180.png">
 <title>وينه</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://sjlqtlmpgypcmylcycpz.supabase.co" crossorigin>
+<link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
+<link rel="dns-prefetch" href="https://tiles.openfreemap.org">
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js" crossorigin>
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css" media="print" onload="this.media='all'">
 <style>
 /* Waynah: royal navy + toasted caramel on warm paper. Phone = one app column. Laptop = brand stage beside the app. */
 :root{
@@ -363,7 +369,9 @@ body:not(.mapmode) .bb .w{opacity:0}body:not(.mapmode) .bb .c{opacity:1}
 }
 
 /* ---------- map mode (driver) ---------- */
-#map{position:fixed;inset:0;z-index:0;background:#060B18;transition:filter .5s}
+#map{position:fixed;inset:0;z-index:0;background:radial-gradient(120% 80% at 60% 30%,#1b2a4d,#060B18 70%);transition:filter .5s}
+#map .maplibregl-canvas{opacity:0;transition:opacity .9s ease}
+body.map-ready #map .maplibregl-canvas{opacity:1}
 .maplibregl-map{font-family:var(--f-body)}
 .maplibregl-ctrl-attrib{font-size:9px!important;background:rgba(6,11,24,.55)!important;color:#8b94ad!important;direction:ltr}
 .maplibregl-ctrl-attrib a{color:#b9c2da!important}
@@ -387,10 +395,14 @@ body:not(.mapmode) .skystars{display:none}
 .clouds.on{opacity:var(--cop,.9)}.clouds.thin{opacity:calc(var(--cop,.9) * .3)}
 .clouds{filter:brightness(var(--cb,1)) sepia(var(--cw,0)) saturate(calc(1 + var(--cw,0)))}
 .clouds i{position:absolute;inset:-60% -120% -60% -20%;background-repeat:repeat;will-change:transform}
-.clouds .sh{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cumsh.webp);background-size:1500px 1500px;opacity:.38;transform:translate3d(60px,90px,0);animation:cloudA 240s linear infinite}
-.clouds .cu{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cum.webp);background-size:1500px 1500px;opacity:.78;animation:cloudB 240s linear infinite;filter:brightness(1.18) contrast(1.04)}
-.clouds .ci{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cir.webp);background-size:1600px 1600px;mix-blend-mode:screen;opacity:.4;filter:blur(1px);animation:cloudC 420s linear infinite}
-.clouds .cu2{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cum.webp);background-size:2400px 2400px;opacity:.42;filter:blur(1.4px) brightness(1.15);animation:cloudD 520s linear infinite}
+.clouds .sh{background-size:1500px 1500px;opacity:.38;transform:translate3d(60px,90px,0);animation:cloudA 240s linear infinite}
+.clouds .cu{background-size:1500px 1500px;opacity:.78;animation:cloudB 240s linear infinite;filter:brightness(1.18) contrast(1.04)}
+.clouds .ci{background-size:1600px 1600px;mix-blend-mode:screen;opacity:.4;filter:blur(1px);animation:cloudC 420s linear infinite}
+.clouds .cu2{background-size:2400px 2400px;opacity:.42;filter:blur(1.4px) brightness(1.15);animation:cloudD 520s linear infinite}
+body.sky-ready .clouds .sh{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cumsh.webp)}
+body.sky-ready .clouds .cu,body.sky-ready .clouds .cu2{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cum.webp)}
+body.sky-ready .clouds .ci{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cir.webp)}
+@media (hover:none){.clouds .ci,.clouds .cu2{display:none}.clouds i{inset:-30% -80% -30% -10%}}
 @keyframes cloudA{from{transform:translate3d(60px,90px,0)}to{transform:translate3d(-1440px,230px,0)}}
 @keyframes cloudB{from{transform:translate3d(0,0,0)}to{transform:translate3d(-1500px,140px,0)}}
 @keyframes cloudC{from{transform:translate3d(0,0,0)}to{transform:translate3d(-1600px,-60px,0)}}
@@ -574,11 +586,14 @@ body.mapmode .pill.p-info{background:rgba(255,255,255,.12);color:#F4EEE3}
 <div id="overlay"></div>
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
 <script>
 (function () {
 'use strict';
+/* ---------------- libraries load in the background; the page renders first ---------------- */
+var loadScript = function (src) { return new Promise(function (res) { var s = document.createElement('script'); s.src = src; s.async = true; s.crossOrigin = 'anonymous'; s.onload = function () { res(true); }; s.onerror = function () { res(false); }; document.head.appendChild(s); }); };
+var SUPA_P = loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js');
+var WEBGL_OK = (function () { try { var c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; } })();
+var GL_P = WEBGL_OK ? loadScript('https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js') : Promise.resolve(false);
 /* ---------------- helpers ---------------- */
 var $ = function (s, r) { return (r || document).querySelector(s); };
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -649,7 +664,7 @@ var CARS = [
 var BRAND_COLOR = { toyota: '#C8102E', lexus: '#1A1A1A', nissan: '#C3002F', mercedes: '#2B2B2B', bmw: '#0066B1', hyundai: '#002C5F', kia: '#05141F', honda: '#CC0000', mitsubishi: '#E60012', ford: '#003478', chevrolet: '#D4A017', gmc: '#B22222', landrover: '#005A2B', mazda: '#101010', suzuki: '#E4002B', jeep: '#3A5F3A', mg: '#8B0000', changan: '#1F4E79', isuzu: '#C8102E' };
 var LOGO = 'https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/logos/';
 var brandBadge = function (b) { return '<span class="bb"><img class="w" src="' + LOGO + 'w-' + b.id + '.webp" alt="" width="120" height="40" decoding="async"><img class="c" src="' + LOGO + b.id + '.webp" alt="" width="120" height="40" decoding="async"></span>'; };
-(function () { try { CARS.forEach(function (b) { [LOGO + 'w-' + b.id + '.webp', LOGO + b.id + '.webp'].forEach(function (u) { var i = new Image(); i.decoding = 'async'; i.src = u; }); }); } catch (e) {} })();
+var preloadLogos = function () { if (preloadLogos.done) return; preloadLogos.done = true; try { CARS.forEach(function (b) { [LOGO + 'w-' + b.id + '.webp', LOGO + b.id + '.webp'].forEach(function (u) { var i = new Image(); i.decoding = 'async'; i.src = u; }); }); } catch (e) {} };
 var DIAL = 'AF93,AL355,DZ213,AD376,AO244,AR54,AM374,AU61,AT43,AZ994,BH973,BD880,BY375,BE32,BJ229,BT975,BO591,BA387,BW267,BR55,BN673,BG359,BF226,BI257,KH855,CM237,CA1,CV238,CF236,TD235,CL56,CN86,CO57,KM269,CG242,CD243,CR506,CI225,HR385,CU53,CY357,CZ420,DK45,DJ253,DO1809,EC593,EG20,SV503,GQ240,ER291,EE372,SZ268,ET251,FJ679,FI358,FR33,GA241,GM220,GE995,DE49,GH233,GR30,GT502,GN224,GW245,GY592,HT509,HN504,HK852,HU36,IS354,IN91,ID62,IR98,IQ964,IE353,IT39,JM1876,JP81,JO962,KZ7,KE254,KW965,KG996,LA856,LV371,LB961,LS266,LR231,LY218,LI423,LT370,LU352,MO853,MG261,MW265,MY60,MV960,ML223,MT356,MR222,MU230,MX52,MD373,MC377,MN976,ME382,MA212,MZ258,MM95,NA264,NP977,NL31,NZ64,NI505,NE227,NG234,MK389,NO47,OM968,PK92,PS970,PA507,PG675,PY595,PE51,PH63,PL48,PT351,QA974,RO40,RU7,RW250,SA966,SN221,RS381,SC248,SL232,SG65,SK421,SI386,SO252,ZA27,SS211,ES34,LK94,SD249,SR597,SE46,CH41,SY963,TW886,TJ992,TZ255,TH66,TG228,TT1868,TN216,TR90,TM993,UG256,UA380,AE971,GB44,US1,UY598,UZ998,VE58,VN84,YE967,ZM260,ZW263';
 var COUNTRIES = (function () {
   var dn = null; try { dn = new Intl.DisplayNames(['ar'], { type: 'region' }); } catch (e) {}
@@ -733,11 +748,13 @@ var Buddy = {
     el.addEventListener('click', function () { self.el.classList.remove('wiggle'); void self.el.offsetWidth; self.el.classList.add('wiggle'); self.say(SAY.poke[Math.floor(Math.random() * SAY.poke.length)], 2600); });
     setInterval(function () { if (self.el.style.display !== 'none' && document.visibilityState === 'visible') { self.el.classList.remove('wiggle'); void self.el.offsetWidth; self.el.classList.add('wiggle'); } }, 20000);
   },
-  show: function (on) { if (this.el) this.el.style.display = on ? '' : 'none'; if (on && !this.introReady && !this.introLoading) { var self = this; this.introLoading = true; var im = new Image(); im.onload = function () { self.introReady = true; if (S.d.view === 'welcome' && self.cur === 'wave') { self.cur = ''; self.pose('intro'); } }; im.src = MZ + 'intro2.webp'; } },
+  loadIntro: function () { if (this.introReady || this.introLoading) return; this._intro(); },
+  show: function (on) { if (this.el) this.el.style.display = on ? '' : 'none'; },
+  _intro: function () { if (true) { var self = this; this.introLoading = true; var im = new Image(); im.onload = function () { self.introReady = true; if (S.d.view === 'welcome' && self.cur === 'wave') { self.cur = ''; self.pose('intro'); } }; im.src = MZ + 'intro3.webp'; } },
   pose: function (p) {
     if (!this.el || p === this.cur) return; this.cur = p;
     var imgs = this.el.querySelectorAll('.pz');
-    for (var i = 0; i < imgs.length; i++) { var im = imgs[i], on = im.dataset.p === p; if (on && im.tagName === 'IMG' && !im.src) im.src = MZ + (p === 'intro' ? 'intro2' : 'm-' + p) + '.webp'; im.classList.toggle('on', on); }
+    for (var i = 0; i < imgs.length; i++) { var im = imgs[i], on = im.dataset.p === p; if (on && im.tagName === 'IMG' && !im.src) im.src = MZ + (p === 'intro' ? 'intro3' : 'm-' + p) + '.webp'; im.classList.toggle('on', on); }
   },
   say: function (t, ms) {
     var b = this.el && this.el.querySelector('.bub'); if (!b) return;
@@ -787,9 +804,9 @@ function todNow() {
 var ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 var MapCtl = window.__mapctl = {
   map: null, ok: false, failed: false, shops: {}, areas: [], meM: null, stage: '', cat: null, fxT: {}, spin: null, tod: null, beamIds: [], dashT: null,
-  can: function () { return !!window.maplibregl && !this.failed; },
+  can: function () { return WEBGL_OK && !this.failed; },
   init: function () {
-    if (this.map || !this.can()) return;
+    if (this.map || !this.can() || !window.maplibregl) return;
     var el = document.getElementById('map'); if (!el) return;
     var self = this;
     try {
@@ -820,7 +837,7 @@ var MapCtl = window.__mapctl = {
     map.once('load', function () { var at = el.querySelector('.maplibregl-ctrl-attrib'); if (at) at.classList.remove('maplibregl-compact-show'); });
     map.on('error', function (e) { try { console.warn('[map]', e && e.error && e.error.message); } catch (x) {} });
     this.map = map; this.ok = true;
-    map.on('load', function () { self.ready = true; self.applyTod(true); self.startDash(); (self.pending || []).forEach(function (f) { f(); }); self.pending = []; });
+    map.on('load', function () { self.ready = true; document.body.classList.add('map-ready'); setTimeout(function () { document.body.classList.add('sky-ready'); Buddy.loadIntro(); }, 600); self.applyTod(true); self.startDash(); (self.pending || []).forEach(function (f) { f(); }); self.pending = []; });
     setInterval(function () { self.applyTod(false); }, 60000);
     this.areas = AREAS.map(function (a) {
       var e = document.createElement('div'); e.className = 'apin' + (a.live ? '' : ' soon'); e.innerHTML = '<span class="halo"></span><b>' + esc(a.name) + '</b>';
@@ -1134,9 +1151,11 @@ var Store = {
   db: null, remote: false, mode: 'local',
   init: function () {
     var self = this;
-    if (Remote.init()) { this.remote = true; this.mode = 'shared'; return Promise.resolve(); }
+    return SUPA_P.then(function () {
+    if (Remote.init()) { self.remote = true; self.mode = 'shared'; return; }
     var p = (window.claude && typeof window.claude.use === 'function') ? window.claude.use('db').catch(function () { return null; }) : Promise.resolve(null);
     return Promise.race([p, sleep(6000).then(function () { return null; })]).then(function (db) { if (db) { self.db = db; self.mode = 'shared'; } });
+    });
   },
   watchDoc: function (p, cb) { if (this.remote) return Remote.watch('config', cb); if (this.db) return this.db.doc(p).onSnapshot(function (s) { cb(s.exists ? s.data() : null); }, function () { toast('انقطع الاتصال بالبيانات. حدّث الصفحة.'); }); return Local.watchDoc(p, cb); },
   watchCol: function (c, cb) { if (this.remote) return Remote.watch(c, cb); if (this.db) return this.db.collection(c).onSnapshot(function (q) { cb(q.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { toast('انقطع الاتصال بالبيانات. حدّث الصفحة.'); }); return Local.watchCol(c, cb); },
@@ -1782,7 +1801,7 @@ var A = {
     });
   },
   'd-home': function () { S.d.view = 'part'; S.d.err = ''; S.d.cat = null; S.d.part = ''; },
-  'd-car': function () { S.d.sheet = true; S.d.cs = { step: 'brand', brand: null, model: null, q: '' }; },
+  'd-car': function () { preloadLogos(); S.d.sheet = true; S.d.cs = { step: 'brand', brand: null, model: null, q: '' }; },
   'd-cs-close': function () { S.d.sheet = false; },
   'd-cs-close-bg': function (el, ev) { if (ev.target === el) S.d.sheet = false; else return false; },
   'd-cs-back': function () { var cs = S.d.cs; cs.step = cs.step === 'year' ? 'model' : 'brand'; cs.q = ''; },
@@ -1934,6 +1953,7 @@ try { if ('serviceWorker' in navigator && location.protocol === 'https:') naviga
 
 /* ---------------- boot ---------------- */
 render();
+GL_P.then(function (ok) { if (!ok) MapCtl.failed = true; render(); });
 Store.init().then(function () {
   var pending = 3, done = function () { if (--pending <= 0 && !D.ready) { D.ready = true; } render(); };
   Store.watchCol('requests', function (list) { var before = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; D.requests = list; var after = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; if (after > before && S.d.view === 'offers') { Buddy.jump(); Buddy.say(Buddy.line('got')); if (before === 0) confetti(); } if (S.d.view === 'chat' || S.s.view === 'chat') S._scroll = true; done(); });
