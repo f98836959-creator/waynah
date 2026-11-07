@@ -649,7 +649,7 @@ function shopsFor(cat) { return allShops().filter(function (s) { return !cat || 
 
 /* ---------------- buddy: the mascot that lives on the map ---------------- */
 var MZ = 'https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/mascot/';
-var POSES = ['wave', 'think', 'jump', 'search', 'thumbs', 'tyre', 'run', 'cool', 'pin', 'sad', 'look', 'chat'];
+var POSES = ['wave', 'intro', 'think', 'jump', 'search', 'thumbs', 'tyre', 'run', 'cool', 'pin', 'sad', 'look', 'chat'];
 var SAY = {
   welcome: ['هلا والله! أنا وينه. أعرف وين كل قطعة في الصناعية 😎', 'لا تلف بالحر. قل لي وش تبي وأنا أدلّك.'],
   area: ['طلّعنا فوق… اختر الصناعية اللي تبيها 🛰️', 'المعبيلة جاهزة. الباقي قاعدين نفتحهم.'],
@@ -675,11 +675,11 @@ var Buddy = {
     el.addEventListener('click', function () { self.jump(); self.say(SAY.poke[Math.floor(Math.random() * SAY.poke.length)], 2600); });
     setInterval(function () { if (self.el.style.display !== 'none' && document.visibilityState === 'visible') { self.el.classList.remove('wiggle'); void self.el.offsetWidth; self.el.classList.add('wiggle'); } }, 8000);
   },
-  show: function (on) { if (this.el) this.el.style.display = on ? '' : 'none'; },
+  show: function (on) { if (this.el) this.el.style.display = on ? '' : 'none'; if (on && !this.introReady && !this.introLoading) { var self = this; this.introLoading = true; var im = new Image(); im.onload = function () { self.introReady = true; if (S.d.view === 'welcome' && self.cur === 'wave') { self.cur = ''; self.pose('intro'); } }; im.src = MZ + 'intro.webp'; } },
   pose: function (p) {
     if (!this.el || p === this.cur) return; this.cur = p;
     var imgs = this.el.querySelectorAll('.pz');
-    for (var i = 0; i < imgs.length; i++) { var im = imgs[i], on = im.dataset.p === p; if (on && im.tagName === 'IMG' && !im.src) im.src = MZ + 'm-' + p + '.webp'; im.classList.toggle('on', on); }
+    for (var i = 0; i < imgs.length; i++) { var im = imgs[i], on = im.dataset.p === p; if (on && im.tagName === 'IMG' && !im.src) im.src = MZ + (p === 'intro' ? 'intro' : 'm-' + p) + '.webp'; im.classList.toggle('on', on); }
   },
   say: function (t, ms) {
     var b = this.el && this.el.querySelector('.bub'); if (!b) return;
@@ -794,7 +794,7 @@ var MapCtl = {
   update: function () {
     if (!this.ok) return;
     var d = S.d, v = d.view, r = d.rid ? reqById(d.rid) : null;
-    if (v === 'welcome') { Buddy.pose('wave'); this.go('welcome'); }
+    if (v === 'welcome') { Buddy.pose(Buddy.introReady ? 'intro' : 'wave'); this.go('welcome'); }
     else if (v === 'area') { Buddy.pose('look'); this.go('area'); }
     else if (v === 'part' || v === 'login') { Buddy.pose(d.cat ? 'search' : 'think'); this.go('dive'); }
     else if (v === 'offers') { var n = r ? offersOf(r).length : 0; Buddy.pose(n ? 'pin' : 'search'); this.go('offers', shopsFor(catOf(r && r.part) ? catOf(r.part).id : null)); this.hatch(null); this.mark(r); }
