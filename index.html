@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css">
 <style>
 /* Waynah: royal navy + toasted caramel on warm paper. Phone = one app column. Laptop = brand stage beside the app. */
 :root{
@@ -356,15 +356,21 @@ body:not(.mapmode) .bb img{filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
 
 /* ---------- map mode (driver) ---------- */
 #map{position:fixed;inset:0;z-index:0;background:#060B18;transition:filter .5s}
-#map.rush{filter:saturate(.8) brightness(.8) contrast(1.12) sepia(.08) blur(2px)}
-#map.dim{filter:saturate(.35) brightness(.5) contrast(1.05)}
-.leaflet-container{font-family:var(--f-body)}
-.leaflet-control-attribution{font-size:9px!important;background:rgba(6,11,24,.6)!important;color:#8b94ad!important;direction:ltr}
-.leaflet-control-attribution a{color:#b9c2da!important}
+.maplibregl-map{font-family:var(--f-body)}
+.maplibregl-ctrl-attrib{font-size:9px!important;background:rgba(6,11,24,.55)!important;color:#8b94ad!important;direction:ltr}
+.maplibregl-ctrl-attrib a{color:#b9c2da!important}
+.maplibregl-ctrl-attrib-button{filter:invert(1);opacity:.5}
+body.mapmode .maplibregl-ctrl-bottom-left{bottom:calc(44vh + 4px)}
+@media (min-width:960px){body.mapmode .maplibregl-ctrl-bottom-left{bottom:0;left:500px}}
+.tod{position:fixed;inset:0;z-index:1;pointer-events:none;background:var(--tint,transparent);mix-blend-mode:soft-light;transition:background 2s}
+.stars{position:fixed;inset:0 0 50% 0;z-index:2;pointer-events:none;opacity:0;transition:opacity 2s;background-image:radial-gradient(1px 1px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 33% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 58% 22%,#fff,transparent),radial-gradient(1px 1px at 72% 12%,#fff,transparent),radial-gradient(1.2px 1.2px at 86% 26%,#fff,transparent),radial-gradient(1px 1px at 22% 34%,#fff,transparent),radial-gradient(1px 1px at 45% 30%,#fff,transparent),radial-gradient(1.3px 1.3px at 92% 6%,#fff,transparent),radial-gradient(1px 1px at 6% 6%,#fff,transparent),radial-gradient(1px 1px at 65% 38%,#fff,transparent);-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent);animation:twinkle 6s ease-in-out infinite alternate}
+@keyframes twinkle{to{filter:brightness(.6)}}
+body[data-tod="night"] .stars.on,body[data-tod="blue"] .stars.on{opacity:.8}
 .tint{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,transparent 35%,rgba(6,11,24,.55) 100%),linear-gradient(180deg,rgba(6,11,24,.55),transparent 30%,transparent 60%,rgba(6,11,24,.75))}
 /* sky render: cloud shadows on the ground, two cloud decks, sun, haze, grain */
 .clouds{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 2.4s}
-.clouds.on{opacity:1}.clouds.thin{opacity:.28}
+.clouds.on{opacity:var(--cop,.9)}.clouds.thin{opacity:calc(var(--cop,.9) * .3)}
+.clouds{filter:brightness(var(--cb,1)) sepia(var(--cw,0)) saturate(calc(1 + var(--cw,0)))}
 .clouds i{position:absolute;inset:-60% -120% -60% -20%;background-repeat:repeat;will-change:transform}
 .clouds .sh{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cumsh.webp);background-size:1500px 1500px;opacity:.38;transform:translate3d(60px,90px,0);animation:cloudA 240s linear infinite}
 .clouds .cu{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cum.webp);background-size:1500px 1500px;opacity:.78;animation:cloudB 240s linear infinite;filter:brightness(1.18) contrast(1.04)}
@@ -376,13 +382,13 @@ body:not(.mapmode) .bb img{filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
 @keyframes cloudD{from{transform:translate3d(0,0,0)}to{transform:translate3d(-2400px,260px,0)}}
 .sky{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity 2.4s}
 .sky.on{opacity:1}.sky.thin{opacity:.35}
-.sky .sun{position:absolute;inset:0;background:radial-gradient(60% 50% at 88% -8%,rgba(255,214,150,.55),rgba(255,190,120,.18) 30%,transparent 62%)}
+.sky .sun{position:absolute;inset:0;background:radial-gradient(60% 50% at var(--sun-x,88%) -8%,var(--glow,rgba(255,214,150,.55)),var(--glow2,rgba(255,190,120,.18)) 30%,transparent 62%);transition:background 2s}
+body[data-tod="night"] .sky .rays,body[data-tod="blue"] .sky .rays{display:none}
 .sky .haze{position:absolute;inset:0;background:linear-gradient(180deg,rgba(120,160,210,.22),rgba(120,160,210,.06) 35%,transparent 60%),radial-gradient(120% 80% at 50% 110%,rgba(10,18,40,.55),transparent 55%)}
 .sky .rays{position:absolute;inset:-20%;background:repeating-conic-gradient(from 200deg at 88% -8%,rgba(255,230,190,.06) 0 3deg,transparent 3deg 9deg);-webkit-mask-image:radial-gradient(60% 60% at 88% -8%,#000,transparent 75%);mask-image:radial-gradient(60% 60% at 88% -8%,#000,transparent 75%);animation:raysp 60s linear infinite}
 @keyframes raysp{to{transform:rotate(6deg)}}
 .grain{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");background-size:200px 200px}
 body:not(.mapmode) .sky,body:not(.mapmode) .grain{display:none}
-#map{filter:saturate(.82) brightness(.84) contrast(1.12) sepia(.08)}
 body:not(.mapmode) .clouds{display:none}
 #fx{position:fixed;inset:0;z-index:35;pointer-events:none;overflow:hidden}
 #fx .flash{position:absolute;inset:0;background:#fff;opacity:0}
@@ -400,7 +406,7 @@ body:not(.mapmode) .clouds{display:none}
 #fx.vig .vig{box-shadow:inset 0 0 260px rgba(0,0,0,.95)}
 
 /* pins */
-.pin{width:44px;height:44px;margin:-44px 0 0 -22px!important;transition:opacity .5s,filter .5s}
+.pin{width:44px;height:44px;transition:opacity .5s,filter .5s}
 .pin .in{position:absolute;inset:0}
 .pin .dot{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px;border-radius:50%;background:#FFC37A;box-shadow:0 0 0 3px rgba(255,195,122,.35),0 0 18px rgba(255,195,122,.9)}
 .pin .ring{position:absolute;inset:4px;border-radius:50%;border:2px solid #FFC37A;opacity:0}
@@ -418,7 +424,7 @@ body:not(.mapmode) .clouds{display:none}
 .pin.chosen .dot{background:#5FD38E;box-shadow:0 0 0 3px rgba(95,211,142,.35),0 0 18px rgba(95,211,142,.9)}
 .pin.me .dot{background:#2A56BD;width:16px;height:16px;margin:-8px;box-shadow:0 0 0 4px rgba(42,86,189,.35),0 0 20px rgba(42,86,189,1)}
 .pin.me .ring{animation:radar 2.4s ease-out infinite;border-color:#6B93FF}
-.apin{width:160px;height:60px;margin:-30px 0 0 -80px!important;display:grid;place-items:center;cursor:pointer}
+.apin{width:160px;height:60px;display:grid;place-items:center;cursor:pointer}
 .apin b{font-family:var(--f-display);font-size:14px;font-weight:700;color:#FFF8EE;background:rgba(10,20,45,.7);border:1.5px solid rgba(255,195,122,.7);padding:6px 14px;border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 8px 24px rgba(0,0,0,.5);white-space:nowrap;transition:transform .3s var(--spring),background .3s}
 .apin.soon b{border-color:rgba(255,255,255,.2);color:#9aa4bd;font-weight:600}
 .apin:hover b{transform:scale(1.08);background:rgba(23,51,122,.9)}
@@ -529,7 +535,7 @@ body.mapmode .pill.p-info{background:rgba(255,255,255,.12);color:#F4EEE3}
 </head>
 <body>
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
-<div id="map" aria-hidden="true"></div><div class="tint" aria-hidden="true"></div><div class="clouds" id="clouds" aria-hidden="true"><i class="sh"></i><i class="cu2"></i><i class="cu"></i><i class="ci"></i></div><div class="sky" id="sky" aria-hidden="true"><div class="haze"></div><div class="rays"></div><div class="sun"></div></div><div class="grain" aria-hidden="true"></div>
+<div id="map" aria-hidden="true"></div><div class="tod" aria-hidden="true"></div><div class="stars" id="stars" aria-hidden="true"></div><div class="tint" aria-hidden="true"></div><div class="clouds" id="clouds" aria-hidden="true"><i class="sh"></i><i class="cu2"></i><i class="cu"></i><i class="ci"></i></div><div class="sky" id="sky" aria-hidden="true"><div class="haze"></div><div class="rays"></div><div class="sun"></div></div><div class="grain" aria-hidden="true"></div>
 <div id="fx" aria-hidden="true"><div class="hatch"></div><div class="rays"></div><div class="scan"></div><div class="vig"></div><div class="flash"></div></div>
 <header class="topbar">
   <a class="brand" href="#driver" aria-label="وينه"><img src="img/head.webp" alt=""><b>وينه</b></a>
@@ -556,7 +562,7 @@ body.mapmode .pill.p-info{background:rgba(255,255,255,.12);color:#F4EEE3}
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
 <script>
 (function () {
 'use strict';
@@ -676,7 +682,7 @@ var DEMO_SHOPS = [
   { id: 'demo-noor', name: 'نور الصناعية للزيوت والفلاتر', short: 'نور الصناعية', rating: 4.5, dist: 6.6, cond: 'أصلي جديد', mult: 1.05, avail: 'موجودة الحين', note: 'تغيير على الواقف خلال 10 دقايق', delay: 3400, cats: ['oil', 'filter', 'battery'], lat: 23.6558, lng: 58.1008 }
 ];
 var ME_POS = { lat: 23.6185, lng: 58.1330 };
-try { if (navigator.geolocation) navigator.geolocation.getCurrentPosition(function (g) { var la = g.coords.latitude, ln = g.coords.longitude; if (Math.abs(la - AREA.lat) < .6 && Math.abs(ln - AREA.lng) < .6) { ME_POS = { lat: la, lng: ln }; if (MapCtl.meM) MapCtl.meM.setLatLng([la, ln]); } }, function () {}, { maximumAge: 600000, timeout: 8000 }); } catch (e) {}
+try { if (navigator.geolocation) navigator.geolocation.getCurrentPosition(function (g) { var la = g.coords.latitude, ln = g.coords.longitude; if (Math.abs(la - AREA.lat) < .6 && Math.abs(ln - AREA.lng) < .6) { ME_POS = { lat: la, lng: ln }; if (MapCtl.meM) MapCtl.meM.setLngLat([ln, la]); } }, function () {}, { maximumAge: 600000, timeout: 8000 }); } catch (e) {}
 var MAPS = 'https://www.google.com/maps/search/?api=1&query=Al+Maabilah+Industrial+Area+Seeb+Muscat';
 function mapsTo(s) { return s && s.lat ? 'https://www.google.com/maps/dir/?api=1&destination=' + s.lat + ',' + s.lng : MAPS; }
 function allShops() {
@@ -728,23 +734,107 @@ var Buddy = {
   line: function (key, vars) { var a = SAY[key] || []; var t = a[Math.floor(Math.random() * a.length)] || ''; Object.keys(vars || {}).forEach(function (k) { t = t.replace('{' + k + '}', vars[k]); }); return t; }
 };
 
-/* ---------------- the live map (GTA-style camera) ---------------- */
+/* ---------------- time of day: real sun position over Muscat ---------------- */
+function sunPos(date, lat, lng) {
+  var rad = Math.PI / 180, d = date.getTime() / 86400000 - 10957.5;
+  var M = rad * (357.5291 + 0.98560028 * d);
+  var C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+  var L0 = M + C + rad * 102.9372 + Math.PI, e = rad * 23.4397;
+  var dec = Math.asin(Math.sin(e) * Math.sin(L0)), ra = Math.atan2(Math.sin(L0) * Math.cos(e), Math.cos(L0));
+  var th = rad * (280.16 + 360.9856235 * d) + rad * lng - ra, phi = rad * lat;
+  var alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(th));
+  var az = Math.atan2(Math.sin(th), Math.cos(th) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi));
+  return { alt: alt / rad, az: (az / rad + 180) % 360 };
+}
+var TOD_KEYS = [
+  // alt, raster brightness/sat/contrast, tint, glow, clouds, sky, light, buildings, road glow, city lights
+  { a: -18, br: .34, sa: -.45, co: .18, tint: '#0b1840', ta: .38, glow: '#9db4ff', ga: .16, cb: .32, cw: 0, cop: .4, sky: '#02050f', hor: '#0b1636', fog: '#050a1a', lc: '#8ea2ff', li: .12, bc: '#1c2236', road: 1, city: 1, name: 'night' },
+  { a: -8, br: .52, sa: -.2, co: .14, tint: '#1d2a62', ta: .3, glow: '#ff8f63', ga: .22, cb: .55, cw: .2, cop: .55, sky: '#121a42', hor: '#b2605a', fog: '#2a2d55', lc: '#a9a6e8', li: .22, bc: '#383a56', road: .75, city: .65, name: 'blue' },
+  { a: -2, br: .76, sa: .06, co: .14, tint: '#ff6a2b', ta: .2, glow: '#ff7a3a', ga: .58, cb: .9, cw: .75, cop: .85, sky: '#3a3f88', hor: '#ff8a4c', fog: '#d9886a', lc: '#ff9a5a', li: .4, bc: '#c79c80', road: .3, city: .2, name: 'maghrib' },
+  { a: 5, br: .93, sa: .12, co: .1, tint: '#ffad55', ta: .12, glow: '#ffc98a', ga: .48, cb: 1.05, cw: .45, cop: .9, sky: '#5b8ed6', hor: '#ffd3a0', fog: '#e8c49f', lc: '#ffd9a6', li: .5, bc: '#e4cdab', road: 0, city: 0, name: 'golden' },
+  { a: 20, br: 1, sa: .06, co: .07, tint: '#ffffff', ta: 0, glow: '#fff3d6', ga: .34, cb: 1.15, cw: 0, cop: .9, sky: '#4a8fe7', hor: '#cfe5ff', fog: '#dfe9f5', lc: '#ffffff', li: .55, bc: '#efe6d6', road: 0, city: 0, name: 'day' }
+];
+function hex2rgb(h) { var n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function mixHex(a, b, t) { var x = hex2rgb(a), y = hex2rgb(b); return '#' + x.map(function (v, i) { return ('0' + Math.round(v + (y[i] - v) * t).toString(16)).slice(-2); }).join(''); }
+function rgba(h, a) { var x = hex2rgb(h); return 'rgba(' + x[0] + ',' + x[1] + ',' + x[2] + ',' + a.toFixed(3) + ')'; }
+var FORCE_TOD = (function () { try { var m = /[?&]time=(day|golden|maghrib|blue|night)/.exec(location.search); return m ? m[1] : null; } catch (e) { return null; } })();
+function todNow() {
+  var s = sunPos(new Date(), 23.6, 58.3), alt = s.alt;
+  if (FORCE_TOD) alt = { night: -20, blue: -8, maghrib: -2, golden: 5, day: 40 }[FORCE_TOD];
+  var K = TOD_KEYS, lo = K[0], hi = K[K.length - 1];
+  if (alt <= lo.a) hi = lo; else if (alt >= hi.a) lo = hi;
+  else for (var i = 0; i < K.length - 1; i++) if (alt >= K[i].a && alt <= K[i + 1].a) { lo = K[i]; hi = K[i + 1]; break; }
+  var t = hi === lo ? 0 : (alt - lo.a) / (hi.a - lo.a), o = { alt: alt, az: s.az, name: t < .5 ? lo.name : hi.name };
+  Object.keys(lo).forEach(function (k) { if (k === 'a' || k === 'name') return; o[k] = typeof lo[k] === 'number' ? lo[k] + (hi[k] - lo[k]) * t : mixHex(lo[k], hi[k], t); });
+  return o;
+}
+
+/* ---------------- the live map: MapLibre GL, real 3D camera ---------------- */
+var ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 var MapCtl = {
-  map: null, ok: false, shops: {}, areas: [], meM: null, beams: null, route: null, stage: '', drift: null, cat: null, fxT: {},
+  map: null, ok: false, failed: false, shops: {}, areas: [], meM: null, stage: '', cat: null, fxT: {}, spin: null, tod: null, beamIds: [], dashT: null,
+  can: function () { return !!window.maplibregl && !this.failed; },
   init: function () {
-    if (this.map || !window.L) return;
+    if (this.map || !this.can()) return;
     var el = document.getElementById('map'); if (!el) return;
-    var map = L.map(el, { zoomControl: false, attributionControl: true, zoomSnap: 0.1, inertia: true, worldCopyJump: false });
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri, Maxar, Earthstar Geographics' }).addTo(map);
-    map.setView([22.4, 57.6], 6.4);
-    this.map = map; this.ok = true;
     var self = this;
+    try {
+      var map = new maplibregl.Map({
+        container: el, attributionControl: false, maxPitch: 72, fadeDuration: 250, renderWorldCopies: false,
+        center: [57.9, 22.9], zoom: 6.4, pitch: 0, bearing: 0, interactive: true, dragRotate: true, pitchWithRotate: true,
+        style: {
+          version: 8,
+          glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+          sources: {
+            sat: { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' },
+            night: { type: 'raster', tiles: ['https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png'], tileSize: 256, maxzoom: 8, attribution: 'NASA Black Marble' },
+            osm: { type: 'vector', url: 'https://tiles.openfreemap.org/planet', attribution: '© OpenMapTiles © OpenStreetMap' }
+          },
+          layers: [
+            { id: 'bg', type: 'background', paint: { 'background-color': '#05080f' } },
+            { id: 'sat', type: 'raster', source: 'sat', paint: { 'raster-fade-duration': 250 } },
+            { id: 'city', type: 'raster', source: 'night', maxzoom: 12, paint: { 'raster-opacity': 0 } },
+            { id: 'roads-glow', type: 'line', source: 'osm', 'source-layer': 'transportation', minzoom: 9, filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffad4f', 'line-blur': ['interpolate', ['linear'], ['zoom'], 10, 2, 16, 6], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 14, 5, 17, 12], 'line-opacity': 0 } },
+            { id: 'roads-core', type: 'line', source: 'osm', 'source-layer': 'transportation', minzoom: 11, filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffe2b8', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, .4, 16, 1.4], 'line-opacity': 0 } },
+            { id: 'buildings', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 14.5, paint: {
+              'fill-extrusion-color': '#e6dccb',
+              'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14.5, 0, 15.5, ['coalesce', ['get', 'render_height'], 6]],
+              'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+              'fill-extrusion-opacity': .82, 'fill-extrusion-vertical-gradient': true } }
+          ]
+        }
+      });
+    } catch (e) { this.failed = true; return; }
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+    map.on('error', function (e) { try { console.warn('[map]', e && e.error && e.error.message); } catch (x) {} });
+    this.map = map; this.ok = true;
+    map.on('load', function () { self.applyTod(true); self.startDash(); });
+    setInterval(function () { self.applyTod(false); }, 60000);
     this.areas = AREAS.map(function (a) {
-      var ic = L.divIcon({ className: 'apin' + (a.live ? '' : ' soon'), html: '<span class="halo"></span><b>' + esc(a.name) + '</b>', iconSize: [160, 60] });
-      var m = L.marker([a.lat, a.lng], { icon: ic, interactive: a.live, keyboard: false });
-      if (a.live) m.on('click', function () { A['d-area'](); render(); });
-      return m;
+      var e = document.createElement('div'); e.className = 'apin' + (a.live ? '' : ' soon'); e.innerHTML = '<span class="halo"></span><b>' + esc(a.name) + '</b>';
+      if (a.live) e.addEventListener('click', function () { A['d-area'](); render(); });
+      return new maplibregl.Marker({ element: e, anchor: 'center' }).setLngLat([a.lng, a.lat]);
     });
+    window.addEventListener('resize', function () { map.resize(); });
+  },
+  applyTod: function (first) {
+    var t = todNow(), m = this.map; this.tod = t;
+    var root = document.documentElement.style;
+    root.setProperty('--tint', rgba(t.tint, t.ta)); root.setProperty('--glow', rgba(t.glow, t.ga)); root.setProperty('--glow2', rgba(t.glow, t.ga * .35));
+    root.setProperty('--cb', t.cb.toFixed(2)); root.setProperty('--cw', t.cw.toFixed(2)); root.setProperty('--cop', t.cop.toFixed(2));
+    root.setProperty('--sun-x', (t.az > 180 ? 8 : 92) + '%');
+    document.body.dataset.tod = t.name;
+    if (!m || !m.isStyleLoaded()) return;
+    m.setPaintProperty('sat', 'raster-brightness-max', t.br);
+    m.setPaintProperty('sat', 'raster-saturation', t.sa);
+    m.setPaintProperty('sat', 'raster-contrast', t.co);
+    m.setPaintProperty('city', 'raster-opacity', ['interpolate', ['linear'], ['zoom'], 6, t.city * .9, 9, t.city * .55, 11.5, 0]);
+    m.setPaintProperty('roads-glow', 'line-opacity', t.road * .55);
+    m.setPaintProperty('roads-core', 'line-opacity', t.road * .8);
+    m.setPaintProperty('buildings', 'fill-extrusion-color', t.bc);
+    m.setPaintProperty('buildings', 'fill-extrusion-opacity', t.road > .5 ? .9 : .82);
+    try { m.setLight({ anchor: 'map', color: t.lc, intensity: t.li, position: [1.4, t.az, Math.max(10, 90 - Math.max(t.alt, 8))] }); } catch (e) {}
+    try { m.setSky({ 'sky-color': t.sky, 'horizon-color': t.hor, 'fog-color': t.fog, 'sky-horizon-blend': .6, 'horizon-fog-blend': .7, 'fog-ground-blend': .55, 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 10, 1, 12, 0] }); } catch (e) {}
   },
   fx: function (cls, ms) {
     var f = document.getElementById('fx'); if (!f) return;
@@ -752,46 +842,46 @@ var MapCtl = {
     clearTimeout(this.fxT[cls]); this.fxT[cls] = setTimeout(function () { f.classList.remove(cls); }, ms || 1700);
   },
   lap: function () { return window.innerWidth >= 960; },
-  shopBounds: function () { var pts = allShops().map(function (s) { return [s.lat, s.lng]; }); return (pts.length > 1 ? L.latLngBounds(pts) : L.latLngBounds([[AREA.lat - .008, AREA.lng - .01], [AREA.lat + .008, AREA.lng + .01]])).pad(.12); },
-  aim: function (lat, lng, zoom) {
-    var sz = this.map.getSize(), off = this.lap() ? [-244, 0] : [0, Math.round(sz.y * 0.27)];
-    return this.map.unproject(this.map.project([lat, lng], zoom).add(off), zoom);
+  pad: function () { var h = window.innerHeight; return this.lap() ? { top: 90, bottom: 60, left: 520, right: 60 } : { top: 80, bottom: Math.round(h * 0.56), left: 30, right: 30 }; },
+  bounds: function (pts) { var b = new maplibregl.LngLatBounds(); pts.forEach(function (p) { b.extend([p[1], p[0]]); }); return b; },
+  shopPts: function () { var p = allShops().map(function (s) { return [s.lat, s.lng]; }); return p.length > 1 ? p : [[AREA.lat - .008, AREA.lng - .01], [AREA.lat + .008, AREA.lng + .01]]; },
+  fly: function (opt, cb) {
+    var self = this, m = this.map;
+    this.stopSpin(); this.fx('vig', (opt.duration || 2000) + 600);
+    m.stop(); m.flyTo(Object.assign({ padding: this.pad(), essential: true, curve: 1.5 }, opt));
+    if (cb) m.once('moveend', cb);
   },
-  pad: function () { var sz = this.map.getSize(); return this.lap() ? { paddingTopLeft: [500, 90], paddingBottomRight: [60, 60] } : { paddingTopLeft: [30, 80], paddingBottomRight: [30, Math.round(sz.y * 0.56)] }; },
-  gta: function (lat, lng, zoom, dur, cb) {
-    var self = this, el = document.getElementById('map');
-    this.fx('vig', 2600); el.classList.add('rush');
-    if (lat && lat.getSouthWest) this.map.flyToBounds(lat, Object.assign({ duration: dur, easeLinearity: 0.08 }, this.pad()));
-    else this.map.flyTo(this.aim(lat, lng, zoom), zoom, { duration: dur, easeLinearity: 0.08 });
-    this.map.once('moveend', function () { el.classList.remove('rush'); if (cb) cb(); });
+  flyBounds: function (pts, opt, cb) {
+    var cam = this.map.cameraForBounds(this.bounds(pts), { padding: this.pad(), bearing: opt.bearing || 0 }) || {};
+    this.fly(Object.assign({}, opt, { center: cam.center, zoom: Math.min(opt.maxZoom || 18, (cam.zoom || 14) - (opt.pitch ? .35 : 0)) }), cb);
   },
-  startDrift: function () { var self = this; this.stopDrift(); this.drift = setInterval(function () { if (self.stage === 'welcome') self.map.panBy([0.6, -0.25], { animate: false }); }, 50); },
-  stopDrift: function () { clearInterval(this.drift); this.drift = null; },
-  showAreas: function (on) { var self = this; this.areas.forEach(function (m) { if (on) { if (!self.map.hasLayer(m)) m.addTo(self.map); } else if (self.map.hasLayer(m)) self.map.removeLayer(m); }); },
+  startSpin: function () {
+    var self = this, m = this.map; this.stopSpin();
+    var step = function () { if (self.stage !== 'welcome') return; m.easeTo({ bearing: m.getBearing() - 6, duration: 6000, easing: function (x) { return x; }, padding: self.pad() }); };
+    this.spin = setInterval(step, 6000); step();
+  },
+  stopSpin: function () { clearInterval(this.spin); this.spin = null; },
+  marker: function (html, cls, lnglat) { var e = document.createElement('div'); e.className = cls; e.innerHTML = html; return new maplibregl.Marker({ element: e, anchor: 'center' }).setLngLat(lnglat); },
+  on: function (mk, v) { if (v && !mk._on) { mk.addTo(this.map); mk._on = true; } else if (!v && mk._on) { mk.remove(); mk._on = false; } },
+  showAreas: function (v) { var self = this; this.areas.forEach(function (m) { self.on(m, v); }); },
   pinHTML: function (s) { return '<span class="in"><span class="ring"></span><span class="ring"></span><span class="dot"></span><span class="lbl">' + esc(s.short || s.name) + '</span><span class="tag"></span></span>'; },
-  showShops: function (on) {
+  showShops: function (v) {
     var self = this, list = allShops(), seen = {};
     list.forEach(function (s, i) {
       seen[s.id] = true; var m = self.shops[s.id];
-      if (!m) {
-        m = L.marker([s.lat, s.lng], { icon: L.divIcon({ className: 'pin', html: self.pinHTML(s), iconSize: [44, 44] }), keyboard: false, interactive: false });
-        self.shops[s.id] = m; m._s = s;
-      }
-      if (on) { if (!self.map.hasLayer(m)) { m.addTo(self.map); var e = m.getElement(); if (e) { e.classList.add('drop'); e.style.animationDelay = (i * 90) + 'ms'; setTimeout(function () { e.classList.add('show'); }, 400 + i * 90); } } }
-      else if (self.map.hasLayer(m)) self.map.removeLayer(m);
+      if (!m) { m = self.marker(self.pinHTML(s), 'pin', [s.lng, s.lat]); m._s = s; self.shops[s.id] = m; }
+      if (v && !m._on) { self.on(m, true); var e = m.getElement(); e.classList.add('drop'); e.style.animationDelay = (i * 90) + 'ms'; setTimeout(function () { e.classList.add('show'); }, 400 + i * 90); }
+      else if (!v) self.on(m, false);
     });
-    Object.keys(this.shops).forEach(function (id) { if (!seen[id] && self.map.hasLayer(self.shops[id])) self.map.removeLayer(self.shops[id]); });
-    if (!on) { this.showMe(false); }
+    Object.keys(this.shops).forEach(function (id) { if (!seen[id]) self.on(self.shops[id], false); });
+    if (!v) this.showMe(false);
   },
-  showMe: function (on) {
-    if (on) { if (!this.meM) this.meM = L.marker([ME_POS.lat, ME_POS.lng], { icon: L.divIcon({ className: 'pin me show', html: '<span class="in"><span class="ring"></span><span class="dot"></span><span class="lbl">أنت</span></span>', iconSize: [44, 44] }), keyboard: false, interactive: false }); if (!this.map.hasLayer(this.meM)) this.meM.addTo(this.map); }
-    else if (this.meM && this.map.hasLayer(this.meM)) this.map.removeLayer(this.meM);
-  },
+  showMe: function (v) { if (!this.meM) this.meM = this.marker('<span class="in"><span class="ring"></span><span class="dot"></span><span class="lbl">أنت</span></span>', 'pin me show', [ME_POS.lng, ME_POS.lat]); this.meM.setLngLat([ME_POS.lng, ME_POS.lat]); this.on(this.meM, v); },
   hatch: function (cat) {
     var self = this; this.cat = cat;
     if (cat) { this.fx('scan', 1600); setTimeout(function () { self.fx('hatched', 2800); }, 900); }
     Object.keys(this.shops).forEach(function (id) {
-      var m = self.shops[id], e = m.getElement(); if (!e) return;
+      var m = self.shops[id], e = m.getElement();
       var hit = !cat || !m._s.cats.length || m._s.cats.indexOf(cat) >= 0;
       e.classList.toggle('dimmed', !!cat && !hit); e.classList.toggle('on', !!cat && hit);
     });
@@ -799,36 +889,60 @@ var MapCtl = {
   mark: function (r) {
     var self = this, offers = (r && r.offers) || {};
     Object.keys(this.shops).forEach(function (id) {
-      var m = self.shops[id], e = m.getElement(); if (!e) return;
-      var o = offers[id];
+      var e = self.shops[id].getElement(), o = offers[id];
       e.classList.toggle('priced', !!o); e.classList.toggle('chosen', !!(r && r.chosen === id));
       if (o) e.querySelector('.tag').textContent = fmt(o.price) + ' ر.ع';
     });
   },
+  setLine: function (id, coords, color, width, dashed) {
+    var m = this.map; if (!m.isStyleLoaded()) return;
+    var data = { type: 'FeatureCollection', features: coords.map(function (c) { return { type: 'Feature', geometry: { type: 'LineString', coordinates: c } }; }) };
+    if (m.getSource(id)) { m.getSource(id).setData(data); return; }
+    m.addSource(id, { type: 'geojson', data: data, lineMetrics: true });
+    m.addLayer({ id: id + '-glow', type: 'line', source: id, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': color, 'line-width': width * 3.2, 'line-blur': width * 2.4, 'line-opacity': .45 } });
+    m.addLayer({ id: id, type: 'line', source: id, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': color, 'line-width': width, 'line-opacity': .95, 'line-dasharray': dashed ? [0, 2, 2] : [1, 0] } });
+  },
+  clearLine: function (id) { var m = this.map; if (m.getSource(id)) m.getSource(id).setData({ type: 'FeatureCollection', features: [] }); },
+  startDash: function () {
+    var self = this, seq = [[0, 4, 3], [.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, .5], [3, 4, 0], [0, .5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, .5]], i = 0;
+    clearInterval(this.dashT);
+    this.dashT = setInterval(function () { var m = self.map; i = (i + 1) % seq.length; ['beams', 'route'].forEach(function (id) { if (m.getLayer(id)) m.setPaintProperty(id, 'line-dasharray', seq[i]); }); }, 70);
+  },
+  arc: function (a, b, lift) {
+    var pts = [], n = 32, mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], k = lift || .18;
+    var cx = mx - dy * k, cy = my + dx * k;
+    for (var i = 0; i <= n; i++) { var t = i / n, u = 1 - t; pts.push([u * u * a[0] + 2 * u * t * cx + t * t * b[0], u * u * a[1] + 2 * u * t * cy + t * t * b[1]]); }
+    return pts;
+  },
   beam: function (ids) {
-    var self = this; if (this.beams) { this.map.removeLayer(this.beams); this.beams = null; }
-    if (!ids || !ids.length) return;
-    this.beams = L.layerGroup(ids.map(function (id) { var m = self.shops[id]; return m ? L.polyline([[ME_POS.lat, ME_POS.lng], m.getLatLng()], { className: 'beam' }) : null; }).filter(Boolean)).addTo(this.map);
+    var self = this; this.beamIds = ids || [];
+    if (!ids || !ids.length) { this.clearLine('beams'); return; }
+    var me = [ME_POS.lng, ME_POS.lat];
+    this.setLine('beams', ids.map(function (id) { var s = self.shops[id]; return s ? self.arc(me, [s._s.lng, s._s.lat], .12) : null; }).filter(Boolean), '#ffbf70', 2.2, true);
   },
   drawRoute: function (id) {
-    if (this.route) { this.map.removeLayer(this.route); this.route = null; }
-    var m = this.shops[id]; if (!m) return;
-    var a = [ME_POS.lat, ME_POS.lng], b = m.getLatLng();
-    var mid = [a[0] + (b.lat - a[0]) * .5 + .02, a[1] + (b.lng - a[1]) * .5];
-    this.route = L.polyline([a, mid, [b.lat, b.lng]], { className: 'route-line' }).addTo(this.map);
+    var s = this.shops[id]; if (!s) { this.clearLine('route'); return; }
+    this.setLine('route', [this.arc([ME_POS.lng, ME_POS.lat], [s._s.lng, s._s.lat], .2)], '#ffcf8f', 4, true);
   },
   go: function (st, arg) {
     if (!this.ok) return;
-    var self = this, map = this.map;
-    if (st === this.stage && st !== 'focus' && st !== 'hatch' && st !== 'route') return;
+    var self = this, m = this.map;
+    if (st === this.stage && st !== 'focus' && st !== 'route') return;
     var prev = this.stage; this.stage = st;
-    var cl = document.getElementById('clouds'), sk = document.getElementById('sky'); [cl, sk].forEach(function (e) { if (e) { e.classList.toggle('on', st === 'welcome' || st === 'area'); e.classList.toggle('thin', st === 'offers' || st === 'route'); } });
-    if (st === 'welcome') { this.stopDrift(); this.showShops(false); this.showAreas(false); this.beam(null); if (this.route) { map.removeLayer(this.route); this.route = null; } document.getElementById('map').classList.remove('dim'); this.fx('hatched', 1); map.flyTo(this.aim(22.9, 57.9, 6.6), 6.6, { duration: prev ? 1.8 : 0 }); this.startDrift(); }
-    if (st === 'area') { this.stopDrift(); this.showShops(false); this.beam(null); this.gta(23.62, 58.25, 10.2, 3, function () { self.showAreas(true); }); }
-    if (st === 'dive') { this.showAreas(false); this.gta(this.shopBounds(), null, null, 3.4, function () { self.showShops(true); self.showMe(false); if (self.cat) setTimeout(function () { self.hatch(self.cat); }, 400); }); }
-    if (st === 'offers') { this.showShops(true); this.showMe(true); map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], [AREA.lat, AREA.lng]]).pad(.15), Object.assign({ duration: 1.6 }, this.pad())); var ids = (arg || []).map(function (s) { return s.id; }); setTimeout(function () { self.beam(ids); }, 1200); }
-    if (st === 'focus') { var m = this.shops[arg]; this.beam(null); if (m) map.flyTo(this.aim(m.getLatLng().lat, m.getLatLng().lng, 17), 17, { duration: 1.4 }); }
-    if (st === 'route') { this.showMe(true); this.beam(null); this.drawRoute(arg); var mm = this.shops[arg]; if (mm) map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], mm.getLatLng()]).pad(.2), Object.assign({ duration: 1.6 }, this.pad())); }
+    var cl = document.getElementById('clouds'), sk = document.getElementById('sky');
+    var stz = document.getElementById('stars'); if (stz) stz.classList.toggle('on', st === 'welcome' || st === 'area');
+    [cl, sk].forEach(function (e) { if (e) { e.classList.toggle('on', st === 'welcome' || st === 'area'); e.classList.toggle('thin', st === 'offers' || st === 'route'); } });
+    if (st === 'welcome') {
+      this.showShops(false); this.showAreas(false); this.beam(null); this.clearLine('route'); this.fx('hatched', 1);
+      var cam = { center: [57.95, 22.75], zoom: this.lap() ? 6.5 : 5.9, pitch: 58, bearing: -12 };
+      if (!prev) { m.jumpTo(Object.assign({ padding: this.pad() }, cam)); this.startSpin(); }
+      else this.fly(Object.assign({ duration: 2600 }, cam), function () { self.startSpin(); });
+    }
+    if (st === 'area') { this.showShops(false); this.beam(null); this.fly({ center: [58.22, 23.6], zoom: 9.6, pitch: 48, bearing: -18, duration: 3200 }, function () { self.showAreas(true); }); }
+    if (st === 'dive') { this.showAreas(false); this.flyBounds(this.shopPts(), { pitch: 56, bearing: -24, duration: 3600, maxZoom: 16.6 }, function () { self.showShops(true); self.showMe(false); if (self.cat) setTimeout(function () { self.hatch(self.cat); }, 400); }); }
+    if (st === 'offers') { this.showShops(true); this.showMe(true); var ids = (arg || []).map(function (s) { return s.id; }); this.flyBounds([[ME_POS.lat, ME_POS.lng]].concat(this.shopPts()), { pitch: 42, bearing: -10, duration: 2200, maxZoom: 15 }, function () { self.beam(ids); }); }
+    if (st === 'focus') { var s = this.shops[arg]; this.beam(null); if (s) this.fly({ center: [s._s.lng, s._s.lat], zoom: 17.4, pitch: 62, bearing: -32, duration: 2200 }); }
+    if (st === 'route') { this.showMe(true); this.beam(null); var t = this.shops[arg]; if (t) { this.drawRoute(arg); this.flyBounds([[ME_POS.lat, ME_POS.lng], [t._s.lat, t._s.lng]], { pitch: 45, bearing: -15, duration: 2400, maxZoom: 15.5 }); } }
   },
   update: function () {
     if (!this.ok) return;
@@ -1125,23 +1239,25 @@ function render() {
   var html = r === 'shop' ? Shop.view() : r === 'admin' ? Admin.view() : Driver.view();
   var key = r + ':' + (r === 'driver' ? S.d.view : r === 'shop' ? S.s.view : (S.a.unlocked ? 'panel' : 'gate'));
   var root = $('#root');
-  var mapmode = r === 'driver' && !!window.L;
+  var mapmode = r === 'driver' && MapCtl.can();
   document.body.classList.toggle('split', r !== 'admin' && !mapmode);
   document.body.classList.toggle('mapmode', mapmode);
   document.documentElement.setAttribute('data-theme', mapmode ? 'dark' : '');
   root.innerHTML = html;
   if (key !== lastKey) { lastKey = key; root.classList.remove('enter'); void root.offsetWidth; root.classList.add('enter'); clearTimeout(enterT); enterT = setTimeout(function () { root.classList.remove('enter'); }, 1100); window.scrollTo({ top: 0 }); }
   var pm = document.getElementById('pickmap');
-  if (pm && window.L && !pm._leaflet_id) {
-    var pmap = L.map(pm, { zoomControl: false, attributionControl: false }).setView(S.s.reg.loc || [AREA.lat, AREA.lng], 15.3);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(pmap);
-    var pkIcon = L.divIcon({ className: 'pin on show', html: '<span class="in"><span class="ring"></span><span class="dot"></span><span class="lbl">محلك</span></span>', iconSize: [44, 44] });
-    var pk = S.s.reg.loc ? L.marker(S.s.reg.loc, { icon: pkIcon }).addTo(pmap) : null;
-    pmap.on('click', function (e) { S.s.reg.loc = [e.latlng.lat, e.latlng.lng]; if (pk) pk.setLatLng(e.latlng); else pk = L.marker(e.latlng, { icon: pkIcon }).addTo(pmap); var lb = pm.previousElementSibling.querySelector('.xs'); if (lb) lb.textContent = 'حددت الموقع ✓'; });
+  if (pm && window.maplibregl && !pm._map) {
+    try {
+      var pmap = new maplibregl.Map({ container: pm, attributionControl: false, center: S.s.reg.loc ? [S.s.reg.loc[1], S.s.reg.loc[0]] : [AREA.lng, AREA.lat], zoom: 15.3, style: { version: 8, sources: { sat: { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 19 } }, layers: [{ id: 'sat', type: 'raster', source: 'sat' }] } });
+      pm._map = pmap;
+      var pkEl = function () { var e = document.createElement('div'); e.className = 'pin on show'; e.innerHTML = '<span class="in"><span class="ring"></span><span class="dot"></span><span class="lbl">محلك</span></span>'; return e; };
+      var pk = S.s.reg.loc ? new maplibregl.Marker({ element: pkEl(), anchor: 'center' }).setLngLat([S.s.reg.loc[1], S.s.reg.loc[0]]).addTo(pmap) : null;
+      pmap.on('click', function (e) { S.s.reg.loc = [e.lngLat.lat, e.lngLat.lng]; if (pk) pk.setLngLat(e.lngLat); else pk = new maplibregl.Marker({ element: pkEl(), anchor: 'center' }).setLngLat(e.lngLat).addTo(pmap); var lb = pm.previousElementSibling.querySelector('.xs'); if (lb) lb.textContent = 'حددت الموقع ✓'; });
+    } catch (e) {}
   }
   var ch = $('.chat');
   if (ch) { var n = ch.children.length; if (n > lastChat && lastChat > 0 && ch.lastElementChild) ch.lastElementChild.classList.add('fresh'); lastChat = n; } else lastChat = 0;
-  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.invalidateSize(); Buddy.init(); Buddy.show(!(S.d.sheet || S.d.picker)); MapCtl.update(); } else { Buddy.show(false); Stage.update(r); }
+  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (MapCtl.failed) { setTimeout(render, 0); return; } if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.resize(); Buddy.init(); Buddy.show(!(S.d.sheet || S.d.picker)); MapCtl.update(); } else { Buddy.show(false); Stage.update(r); }
   document.body._wasMap = mapmode;
   document.body.style.paddingBottom = '';
   if (aid) { var n = document.getElementById(aid); if (n) { n.focus({ preventScroll: true }); try { if (ss != null) n.setSelectionRange(ss, se); } catch (e) {} } }
