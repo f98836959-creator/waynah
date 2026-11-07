@@ -798,9 +798,9 @@ var MapCtl = window.__mapctl = {
             { id: 'city', type: 'raster', source: 'night', maxzoom: 12, paint: { 'raster-opacity': 0 } },
             { id: 'roads-glow', type: 'line', source: 'osm', 'source-layer': 'transportation', minzoom: 9, filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffad4f', 'line-blur': ['interpolate', ['linear'], ['zoom'], 10, 2, 16, 6], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 14, 5, 17, 12], 'line-opacity': 0 } },
             { id: 'roads-core', type: 'line', source: 'osm', 'source-layer': 'transportation', minzoom: 11, filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffe2b8', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, .4, 16, 1.4], 'line-opacity': 0 } },
-            { id: 'buildings', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 13.5, paint: {
+            { id: 'buildings', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 15, paint: {
               'fill-extrusion-color': '#e6dccb',
-              'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 15, ['coalesce', ['get', 'render_height'], 6]],
+              'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 16.2, ['coalesce', ['get', 'render_height'], 6]],
               'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
               'fill-extrusion-opacity': .82, 'fill-extrusion-vertical-gradient': true } }
           ]
@@ -834,7 +834,7 @@ var MapCtl = window.__mapctl = {
     m.setPaintProperty('roads-glow', 'line-opacity', t.road * .55);
     m.setPaintProperty('roads-core', 'line-opacity', t.road * .8);
     m.setPaintProperty('buildings', 'fill-extrusion-color', t.bc);
-    m.setPaintProperty('buildings', 'fill-extrusion-opacity', t.road > .5 ? .9 : .82);
+    m.setPaintProperty('buildings', 'fill-extrusion-opacity', t.road > .5 ? .85 : .6);
     try { m.setLight({ anchor: 'map', color: t.lc, intensity: t.li, position: [1.4, t.az, Math.max(10, 90 - Math.max(t.alt, 8))] }); } catch (e) {}
     try { m.setSky({ 'sky-color': t.sky, 'horizon-color': t.hor, 'fog-color': t.fog, 'sky-horizon-blend': .6, 'horizon-fog-blend': .7, 'fog-ground-blend': .55, 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 10, 1, 12, 0] }); } catch (e) {}
   },
