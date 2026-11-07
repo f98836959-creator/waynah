@@ -23,7 +23,22 @@
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
+<link rel="preload" as="image" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/splash-mascot.webp" fetchpriority="high">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1320x2868.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1206x2622.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1260x2736.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1290x2796.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1179x2556.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1284x2778.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1170x2532.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1125x2436.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1080x2340.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1242x2688.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-828x1792.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-1242x2208.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-750x1334.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/launch-640x1136.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css" media="print" onload="this.media='all'">
 <style>
 /* Waynah: royal navy + toasted caramel on warm paper. Phone = one app column. Laptop = brand stage beside the app. */
@@ -556,9 +571,71 @@ body.mapmode .pill.p-info{background:rgba(255,255,255,.12);color:#F4EEE3}
   body.mapmode .topbar .mode{display:none}
   body.mapmode .welcome-title{font-size:56px}
 }
+/* ---------- loading splash: the mascot tunes a car while the app warms up ---------- */
+#splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 40px);background:radial-gradient(50% 34% at 50% 40%,rgba(242,155,63,.30) 0%,rgba(242,155,63,.08) 45%,rgba(242,155,63,0) 72%),radial-gradient(130% 85% at 50% 0%,#1E3A82 0%,#0E1F4A 42%,#060B18 100%);color:#F4EEE3;font-family:'Readex Pro','IBM Plex Sans Arabic',-apple-system,system-ui,sans-serif;transition:opacity .55s ease,visibility .55s,transform .55s ease}
+#splash.out{opacity:0;visibility:hidden;pointer-events:none;transform:scale(1.03)}
+#splash .sp-art{position:relative;width:min(80vw,380px);aspect-ratio:760/629}
+#splash .sp-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform-origin:72% 96%;animation:spWork 1.2s ease-in-out infinite;filter:drop-shadow(0 22px 26px rgba(0,0,0,.5))}
+#splash .sp-shadow{position:absolute;left:6%;right:2%;bottom:-4%;height:10%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.6),rgba(0,0,0,0))}
+#splash .sp-k{position:absolute;left:48.5%;top:60%;width:0;height:0}
+#splash .sp-k i{position:absolute;left:0;top:0;width:3px;height:3px;border-radius:2px;background:#FFE2A8;box-shadow:0 0 6px 2px rgba(255,170,70,.95);opacity:0;animation:spSpark 1.2s ease-out infinite}
+#splash .sp-k i:nth-child(1){--dx:-26px;--dy:-18px}
+#splash .sp-k i:nth-child(2){--dx:-14px;--dy:-30px;animation-delay:.05s}
+#splash .sp-k i:nth-child(3){--dx:-32px;--dy:-4px;animation-delay:.09s}
+#splash .sp-k i:nth-child(4){--dx:-6px;--dy:-24px;animation-delay:.13s}
+#splash .sp-k i:nth-child(5){--dx:-22px;--dy:8px;animation-delay:.03s}
+@keyframes spWork{0%,100%{transform:rotate(0) translateY(0)}38%{transform:rotate(-1.4deg) translateY(-2px)}52%{transform:rotate(-1.4deg) translateY(-2px)}70%{transform:rotate(.4deg) translateY(0)}}
+@keyframes spSpark{0%,34%{opacity:0;transform:translate(0,0) scale(1)}40%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.2)}}
+#splash .sp-brand{margin-top:10px;text-align:center;line-height:1}
+#splash .sp-brand b{display:block;font-size:44px;font-weight:700;color:#FFF8EE;text-shadow:0 6px 24px rgba(0,0,0,.35)}
+#splash .sp-brand span{display:block;margin-top:10px;font-size:13px;font-weight:500;color:#AEB8D2}
+#splash .sp-bar{width:min(70vw,290px);height:7px;border-radius:7px;background:rgba(255,255,255,.1);box-shadow:inset 0 1px 2px rgba(0,0,0,.35);overflow:hidden;position:relative;margin-top:8px}
+#splash .sp-bar i{position:absolute;top:0;bottom:0;right:0;width:0;border-radius:7px;background:linear-gradient(270deg,#C8661F,#F29B3F 55%,#FFC37A);box-shadow:0 0 14px rgba(242,155,63,.65);overflow:hidden}
+#splash .sp-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(270deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.55) 50%,rgba(255,255,255,0) 100%);transform:translateX(100%);animation:spShine 1.4s linear infinite}
+@keyframes spShine{to{transform:translateX(-100%)}}
+#splash .sp-cap{display:flex;justify-content:space-between;align-items:center;gap:12px;width:min(70vw,290px);font-size:13px;color:#C9D1E6;min-height:18px}
+#splash .sp-cap span{transition:opacity .2s}
+#splash .sp-cap b{font-weight:600;color:#FFC37A;direction:ltr;font-variant-numeric:tabular-nums}
+@media (min-width:960px){#splash .sp-art{width:420px}}
+@media (prefers-reduced-motion:reduce){#splash .sp-art img,#splash .sp-k i,#splash .sp-bar i::after{animation:none}}
+/* push notifications opt-in */
+.pushcard{display:flex;align-items:center;gap:12px;padding:12px 14px}
+.pushcard .pi{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent)}
+body.mapmode .pushcard .pi{background:rgba(242,155,63,.16);color:var(--caramel-2)}
+.pushon{display:flex;align-items:center;justify-content:center;gap:6px;color:var(--good);font-weight:600}
+body.mapmode .pushon{color:#7BD9A2}
 </style>
 </head>
 <body>
+<div id="splash" role="status" aria-label="جاري تحميل وينه">
+  <div class="sp-art"><span class="sp-shadow"></span><img src="https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/app/splash-mascot.webp" alt="" width="380" height="314" decoding="async" fetchpriority="high"><span class="sp-k"><i></i><i></i><i></i><i></i><i></i></span></div>
+  <div class="sp-brand"><b>وينه</b><span>قطع غيار صناعية المعبيلة</span></div>
+  <div class="sp-bar"><i id="sp-fill"></i></div>
+  <div class="sp-cap"><span id="sp-cap">نجهّز لك الصناعية…</span><b id="sp-pct">0%</b></div>
+</div>
+<script>
+(function () {
+  var el = document.getElementById('splash'); if (!el) return;
+  var fill = document.getElementById('sp-fill'), pct = document.getElementById('sp-pct'), cap = document.getElementById('sp-cap');
+  var caps = ['نجهّز لك الصناعية…', 'نشدّ آخر برغي…', 'نصحّي المحلات…', 'نرسم لك الخريطة…', 'لحظات وتكون جاهز…'], ci = 0;
+  var goal = 8, shown = 0, fin = false, gone = false, t0 = Date.now();
+  var capT = setInterval(function () { cap.style.opacity = 0; setTimeout(function () { ci = (ci + 1) % caps.length; cap.textContent = caps[ci]; cap.style.opacity = 1; }, 200); }, 1700);
+  function hide() { gone = true; clearInterval(capT); el.classList.add('out'); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 700); }
+  function frame() {
+    if (gone) return;
+    var ceil = fin ? 100 : Math.min(goal + 10, 94);
+    if (!fin && goal < ceil) goal = Math.min(ceil, goal + 0.04);
+    shown += (goal - shown) * (fin ? 0.16 : 0.07);
+    if (fin && 100 - shown < 0.8) shown = 100;
+    fill.style.width = shown.toFixed(1) + '%'; pct.textContent = Math.round(shown) + '%';
+    if (fin && shown >= 100) { if (Date.now() - t0 > 1000) { setTimeout(hide, 160); return; } }
+    requestAnimationFrame(frame);
+  }
+  window.Splash = { step: function (v) { if (v > goal) goal = v; }, done: function () { if (fin) return; fin = true; goal = 100; if (document.hidden) hide(); } };
+  requestAnimationFrame(frame);
+  setTimeout(function () { window.Splash.done(); }, 8500);
+})();
+</script>
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
 <div id="map" aria-hidden="true"></div><div class="tod" aria-hidden="true"></div><div class="skystars" id="stars" aria-hidden="true"></div><div class="tint" aria-hidden="true"></div><div class="clouds" id="clouds" aria-hidden="true"><i class="sh"></i><i class="cu2"></i><i class="cu"></i><i class="ci"></i></div><div class="sky" id="sky" aria-hidden="true"><div class="haze"></div><div class="rays"></div><div class="sun"></div></div><div class="grain" aria-hidden="true"></div>
 <div id="fx" aria-hidden="true"><div class="hatch"></div><div class="rays"></div><div class="scan"></div><div class="vig"></div><div class="flash"></div></div>
@@ -631,6 +708,7 @@ function guard(text) {
 var PZ = 'https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/parts/';
 var IMG = { mascot: 'img/waynah.webp', head: 'img/head.webp', tyre: PZ + 'tyre.webp', battery: PZ + 'battery.webp', oil: PZ + 'oil.webp', pads: PZ + 'pads.webp', filter: PZ + 'filter.webp', headlight: PZ + 'light.webp', ac: PZ + 'ac.webp', engine: PZ + 'engine.webp', body: PZ + 'body.webp' };
 var ICON = {
+  bell: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></svg>',
   back: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
   cam: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   send: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12 4 4l3 8-3 8z"/><path d="M7 12h6"/></svg>',
@@ -832,12 +910,12 @@ var MapCtl = window.__mapctl = {
           ]
         }
       });
-    } catch (e) { this.failed = true; return; }
+    } catch (e) { this.failed = true; if (window.Splash) Splash.done(); return; }
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
     map.once('load', function () { var at = el.querySelector('.maplibregl-ctrl-attrib'); if (at) at.classList.remove('maplibregl-compact-show'); });
     map.on('error', function (e) { try { console.warn('[map]', e && e.error && e.error.message); } catch (x) {} });
     this.map = map; this.ok = true;
-    map.on('load', function () { self.ready = true; document.body.classList.add('map-ready'); setTimeout(function () { document.body.classList.add('sky-ready'); Buddy.loadIntro(); }, 600); self.applyTod(true); self.startDash(); (self.pending || []).forEach(function (f) { f(); }); self.pending = []; });
+    map.on('load', function () { self.ready = true; document.body.classList.add('map-ready'); if (window.Splash) Splash.done(); setTimeout(function () { document.body.classList.add('sky-ready'); Buddy.loadIntro(); }, 600); self.applyTod(true); self.startDash(); (self.pending || []).forEach(function (f) { f(); }); self.pending = []; });
     setInterval(function () { self.applyTod(false); }, 60000);
     this.areas = AREAS.map(function (a) {
       var e = document.createElement('div'); e.className = 'apin' + (a.live ? '' : ' soon'); e.innerHTML = '<span class="halo"></span><b>' + esc(a.name) + '</b>';
@@ -1150,6 +1228,51 @@ var OTP = {
   },
   msg: function (e) { return { too_many: 'جربت مرات كثيرة. انتظر 10 دقايق.', expired: 'الرمز انتهى. اطلب رمز جديد.', wrong: 'الرمز غلط. تأكد منه وجرّب مرة ثانية.', no_code: 'اطلب رمز أول.', sms_failed: 'ما قدرنا نرسل الرسالة. جرّب بعد شوي.', offline: 'ما في اتصال. جرّب مرة ثانية.' }[e] || 'صار خطأ. جرّب مرة ثانية.'; }
 };
+/* ---------------- push notifications: free, and they arrive with the app closed ---------------- */
+var Push = {
+  KEY: 'BJACL7vB8kdref_8i6nZ8nG3GRcmTUdIFp7JKl2J6qcTm_UQZmSOKLs-vSk0xvjKLLULDmYkXZ4Z0Tm_LdpiuZ0',
+  ios: /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
+  busy: false,
+  standalone: function () { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } },
+  supported: function () { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext; },
+  state: function (role, ref) {
+    if (!ref) return 'none';
+    if (!this.supported()) return this.ios && !this.standalone() ? 'install' : 'none';
+    if (Notification.permission === 'denied') return 'denied';
+    if (Notification.permission === 'granted' && LS.get('waynah.push', {})[role + ':' + ref]) return 'on';
+    return 'off';
+  },
+  b64: function (s) { var p = '===='.slice(0, (4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; },
+  enable: function (role, ref) {
+    var self = this;
+    if (!this.supported()) return Promise.reject(new Error('unsupported'));
+    var ask = Notification.requestPermission(); // must run straight inside the tap (iPhone rule)
+    return Promise.resolve(ask).then(function (p) {
+      if ((p || Notification.permission) !== 'granted') throw new Error('denied');
+      return navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; });
+    }).then(function (reg) {
+      return reg.pushManager.getSubscription().then(function (s) { return s || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: self.b64(self.KEY) }); });
+    }).then(function (sub) {
+      var j = sub.toJSON();
+      return Store.init().then(function () {
+        if (!Store.remote || !Remote.c) throw new Error('offline');
+        return Remote.c.rpc('push_subscribe', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_role: role, p_ref: String(ref), p_ua: navigator.userAgent.slice(0, 200) });
+      });
+    }).then(function (res) {
+      if (res && res.error) throw res.error;
+      var m = LS.get('waynah.push', {}); m[role + ':' + ref] = Date.now(); LS.set('waynah.push', m);
+    });
+  }
+};
+var pushCard = function (role, ref, title, sub) {
+  var st = Push.state(role, ref);
+  if (st === 'none') return '';
+  if (st === 'on') return '<div class="pushon xs">' + ICON.bell + '<span>الإشعارات شغّالة على هذا الجوال</span></div>';
+  if (st === 'install') return '<div class="card pushcard"><span class="pi">' + ICON.bell + '</span><div class="grow"><b class="small">' + title + '</b><div class="xs muted">بالآيفون، الإشعارات تشتغل لما تثبّت وينه: زر المشاركة ثم «إضافة إلى الشاشة الرئيسية»، وافتحه من الأيقونة.</div></div></div>';
+  if (st === 'denied') return '<div class="card pushcard"><span class="pi">' + ICON.bell + '</span><div class="grow"><b class="small">الإشعارات مقفلة</b><div class="xs muted">افتح إعدادات الجوال ← الإشعارات ← وينه، وشغّلها.</div></div></div>';
+  return '<div class="card pushcard"><span class="pi">' + ICON.bell + '</span><div class="grow"><b class="small">' + title + '</b><div class="xs muted">' + sub + '</div></div><button class="btn btn-primary btn-sm" data-act="push-on" data-role="' + role + '" data-ref="' + esc(ref) + '"' + (Push.busy ? ' disabled' : '') + '>' + (Push.busy ? 'لحظة…' : 'شغّل') + '</button></div>';
+};
+try { if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) { var d = e.data || {}; if (d.type === 'nav' && d.url) { var h = String(d.url).split('#')[1]; if (h) location.hash = '#' + h; render(); } }); } catch (e) {}
 var Store = {
   db: null, remote: false, mode: 'local',
   inited: false, readyP: null,
@@ -1425,6 +1548,7 @@ var Driver = {
           '<button class="btn btn-primary btn-sm" data-act="d-choose" data-sid="' + esc(o.shopId) + '">' + (r.chosen === o.shopId ? 'افتح المحادثة' : 'اختار هذا العرض') + '</button></div></div>';
       }).join('') +
       (waiting ? '<div class="waiting"><span class="dots"><i></i><i></i><i></i></span> ننتظر ردود محلات ثانية…</div>' : '') +
+      (me.full ? pushCard('driver', me.full, 'خلّ العروض توصلك وأنت برّا', 'نرسل لك إشعار أول ما يرد محل، حتى لو سكّرت وينه.') : '') +
       (waiting ? '<button class="btn btn-sm" data-act="d-cancel" data-id="' + r.id + '" style="align-self:center">ألغ الطلب</button>' : '');
   },
   chat: function () {
@@ -1563,6 +1687,7 @@ var Shop = {
     var tabs = [['new', 'طلبات جديدة', fresh.length], ['replied', 'رديت عليها', replied.length], ['book', 'الحجوزات', book.length]];
     var list = s.tab === 'replied' ? replied : s.tab === 'book' ? book : fresh;
     return '<div class="hero" style="min-height:0"><div class="grow"><div class="xs" style="color:var(--caramel);font-weight:700">وينه للأعمال · صناعية المعبيلة</div><div class="t">هلا، ' + esc(shop.name) + '</div><p>' + (reviews.length ? 'تقييمك ' + avg + ' من ' + reviews.length + ' تقييم موثّق' : 'شهرك المجاني ينتظر أول زبون') + '</p></div><img src="' + IMG.mascot + '" alt="" style="width:60px"></div>' +
+      pushCard('shop', shop.id, 'لا يفوتك أي طلب', 'إشعار على جوالك أول ما يطلب زبون قطعة عندك، أو يكتب لك.') +
       '<div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">' + tabs.map(function (t) { return '<button class="kpi" style="border:2px solid ' + (s.tab === t[0] ? 'var(--accent)' : 'transparent') + ';text-align:right" data-act="s-tab" data-v="' + t[0] + '" aria-pressed="' + (s.tab === t[0]) + '"><div class="v">' + t[2] + '</div><div class="xs muted">' + t[1] + '</div></button>'; }).join('') + '</div>' +
       (list.length ? list.map(function (r) {
         var my = (r.offers || {})[shop.id];
@@ -1762,6 +1887,13 @@ function shopSend(text) {
 }
 
 var A = {
+  'push-on': function (el) {
+    if (Push.busy) return false;
+    Push.busy = true;
+    Push.enable(el.dataset.role, el.dataset.ref).then(function () { Push.busy = false; toast('تمام، بيوصلك إشعار حتى لو سكّرت وينه.'); render(); }).catch(function (e) {
+      Push.busy = false; var m = String(e && (e.message || e)); toast(m === 'denied' ? 'ما سمحت بالإشعارات. تقدر تشغّلها من إعدادات الجوال.' : m === 'unsupported' ? 'هذا المتصفح ما يدعم الإشعارات.' : 'ما قدرنا نشغّل الإشعارات. جرّب مرة ثانية.'); render();
+    });
+  },
   /* driver */
   'd-start': function () { S.d.view = 'area'; S.d.err = ''; Buddy.say(Buddy.line('area')); },
   'd-area': function () { S.d.view = 'part'; S.d.err = ''; setTimeout(function () { Buddy.say(Buddy.line('part')); }, 2800); },
@@ -1960,9 +2092,11 @@ try { if ('serviceWorker' in navigator && location.protocol === 'https:') naviga
 
 /* ---------------- boot ---------------- */
 render();
-GL_P.then(function (ok) { if (!ok) MapCtl.failed = true; render(); });
+if (window.Splash) Splash.step(22);
+GL_P.then(function (ok) { if (window.Splash) { Splash.step(74); if (!ok) Splash.done(); } if (!ok) MapCtl.failed = true; render(); });
 Store.init().then(function () {
-  var pending = 3, done = function () { if (--pending <= 0 && !D.ready) { D.ready = true; } render(); };
+  if (window.Splash) Splash.step(50);
+  var pending = 3, done = function () { if (--pending <= 0 && !D.ready) { D.ready = true; if (window.Splash && !document.body.classList.contains('mapmode')) Splash.done(); } render(); };
   Store.watchCol('requests', function (list) { var before = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; D.requests = list; var after = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; if (after > before && S.d.view === 'offers') { Buddy.jump(); Buddy.say(Buddy.line('got')); if (before === 0) confetti(); } if (S.d.view === 'chat' || S.s.view === 'chat') S._scroll = true; done(); });
   Store.watchCol('shops', function (list) { D.shops = list; done(); });
   Store.watchDoc('config/main', function (c) { D.config = c || { demoShops: true }; done(); });
