@@ -1082,8 +1082,8 @@ function render() {
   }
   var ch = $('.chat');
   if (ch) { var n = ch.children.length; if (n > lastChat && lastChat > 0 && ch.lastElementChild) ch.lastElementChild.classList.add('fresh'); lastChat = n; } else lastChat = 0;
-  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.invalidateSize(); Buddy.init(); Buddy.show(true); MapCtl.update(); }
-  document.body._wasMap = mapmode; else { Buddy.show(false); Stage.update(r); }
+  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.invalidateSize(); Buddy.init(); Buddy.show(true); MapCtl.update(); } else { Buddy.show(false); Stage.update(r); }
+  document.body._wasMap = mapmode;
   document.body.style.paddingBottom = '';
   if (aid) { var n = document.getElementById(aid); if (n) { n.focus({ preventScroll: true }); try { if (ss != null) n.setSelectionRange(ss, se); } catch (e) {} } }
   var sc = $('#chatEnd'); if (sc && S._scroll) { sc.scrollIntoView({ block: 'end' }); S._scroll = false; }
