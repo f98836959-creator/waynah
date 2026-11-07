@@ -867,7 +867,7 @@ var MapCtl = window.__mapctl = {
   },
   startSpin: function () {
     var self = this, m = this.map; this.stopSpin();
-    var step = function () { if (self.stage !== 'welcome') return; m.easeTo({ bearing: m.getBearing() - 6, duration: 6000, easing: function (x) { return x; }, padding: self.pad() }); };
+    var step = function () { if (self.stage !== 'welcome' || document.hidden || !document.body.classList.contains('mapmode')) return; m.easeTo({ bearing: m.getBearing() - 6, duration: 6000, easing: function (x) { return x; }, padding: self.pad() }); };
     this.spin = setInterval(step, 6000); step();
   },
   stopSpin: function () { clearInterval(this.spin); this.spin = null; },
@@ -922,7 +922,7 @@ var MapCtl = window.__mapctl = {
   startDash: function () {
     var self = this, seq = [[0, 4, 3], [.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, .5], [3, 4, 0], [0, .5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, .5]], i = 0;
     clearInterval(this.dashT);
-    this.dashT = setInterval(function () { var m = self.map; i = (i + 1) % seq.length; ['beams', 'route'].forEach(function (id) { if (m.getLayer(id)) m.setPaintProperty(id, 'line-dasharray', seq[i]); }); }, 70);
+    this.dashT = setInterval(function () { if (document.hidden || !document.body.classList.contains('mapmode') || (self.stage !== 'offers' && self.stage !== 'route')) return; var m = self.map; i = (i + 1) % seq.length; ['beams', 'route'].forEach(function (id) { if (m.getLayer(id)) m.setPaintProperty(id, 'line-dasharray', seq[i]); }); }, 90);
   },
   arc: function (a, b, lift) {
     var pts = [], n = 32, mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], k = lift || .18;
