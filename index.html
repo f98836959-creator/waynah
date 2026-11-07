@@ -373,9 +373,9 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 /* pins */
 .pin{width:44px;height:44px;margin:-44px 0 0 -22px!important;transition:opacity .5s,filter .5s}
 .pin .in{position:absolute;inset:0}
-.pin .dot{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:#FFC37A;box-shadow:0 0 0 3px rgba(255,195,122,.35),0 0 18px rgba(255,195,122,.9)}
+.pin .dot{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px;border-radius:50%;background:#FFC37A;box-shadow:0 0 0 3px rgba(255,195,122,.35),0 0 18px rgba(255,195,122,.9)}
 .pin .ring{position:absolute;inset:4px;border-radius:50%;border:2px solid #FFC37A;opacity:0}
-.pin .lbl{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;white-space:nowrap;font-size:11px;font-weight:700;color:#FFF8EE;text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.8);font-family:var(--f-body);opacity:0;transition:opacity .3s}
+.pin .lbl{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;white-space:nowrap;font-size:12px;font-weight:700;color:#FFF8EE;text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.8);font-family:var(--f-body);opacity:0;transition:opacity .3s}
 .pin .tag{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) scale(.4);transform-origin:50% 100%;margin-bottom:2px;background:var(--btn-acc);color:#2A1404;font-family:var(--f-display);font-weight:700;font-size:13px;padding:3px 8px;border-radius:999px;white-space:nowrap;opacity:0;transition:transform .45s var(--spring),opacity .3s;box-shadow:var(--glow-acc)}
 .pin.show .lbl{opacity:1}
 .pin.drop .in{animation:pindrop .7s var(--spring) both;animation-delay:inherit}
@@ -414,6 +414,7 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 #buddy video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:bottom;opacity:0;transition:opacity .4s;mix-blend-mode:multiply}
 #buddy video.on{opacity:1}
 
+body:not(.mapmode) #map,body:not(.mapmode) .tint,body:not(.mapmode) #fx{display:none}
 /* layout in map mode */
 body.mapmode{background:#060B18;color:#F4EEE3}
 body.mapmode .bgfx,body.mapmode .stage{display:none}
@@ -1081,7 +1082,8 @@ function render() {
   }
   var ch = $('.chat');
   if (ch) { var n = ch.children.length; if (n > lastChat && lastChat > 0 && ch.lastElementChild) ch.lastElementChild.classList.add('fresh'); lastChat = n; } else lastChat = 0;
-  if (mapmode) { MapCtl.init(); Buddy.init(); Buddy.show(true); MapCtl.update(); } else { Buddy.show(false); Stage.update(r); }
+  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.invalidateSize(); Buddy.init(); Buddy.show(true); MapCtl.update(); }
+  document.body._wasMap = mapmode; else { Buddy.show(false); Stage.update(r); }
   document.body.style.paddingBottom = '';
   if (aid) { var n = document.getElementById(aid); if (n) { n.focus({ preventScroll: true }); try { if (ss != null) n.setSelectionRange(ss, se); } catch (e) {} } }
   var sc = $('#chatEnd'); if (sc && S._scroll) { sc.scrollIntoView({ block: 'end' }); S._scroll = false; }
