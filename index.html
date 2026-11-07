@@ -362,7 +362,7 @@ body:not(.mapmode) .bb img{filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
 .maplibregl-ctrl-attrib-button{filter:invert(1);opacity:.5}
 body.mapmode .maplibregl-ctrl-bottom-left{bottom:calc(44vh + 4px)}
 @media (min-width:960px){body.mapmode .maplibregl-ctrl-bottom-left{bottom:0;left:500px}}
-body[data-tod="day"] .tint,body[data-tod="golden"] .tint{opacity:.55}
+body[data-tod="day"] .tint{opacity:.3}body[data-tod="golden"] .tint{opacity:.5}
 .tint{transition:opacity 2s}
 .tod{position:fixed;inset:0;z-index:1;pointer-events:none;background:var(--tint,transparent);mix-blend-mode:soft-light;transition:background 2s}
 .stars{position:fixed;inset:0 0 50% 0;z-index:2;pointer-events:none;opacity:0;transition:opacity 2s;background-image:radial-gradient(1px 1px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 33% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 58% 22%,#fff,transparent),radial-gradient(1px 1px at 72% 12%,#fff,transparent),radial-gradient(1.2px 1.2px at 86% 26%,#fff,transparent),radial-gradient(1px 1px at 22% 34%,#fff,transparent),radial-gradient(1px 1px at 45% 30%,#fff,transparent),radial-gradient(1.3px 1.3px at 92% 6%,#fff,transparent),radial-gradient(1px 1px at 6% 6%,#fff,transparent),radial-gradient(1px 1px at 65% 38%,#fff,transparent);-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent);animation:twinkle 6s ease-in-out infinite alternate}
@@ -798,9 +798,9 @@ var MapCtl = window.__mapctl = {
             { id: 'city', type: 'raster', source: 'night', maxzoom: 12, paint: { 'raster-opacity': 0 } },
             { id: 'roads-glow', type: 'line', source: 'osm', 'source-layer': 'transportation', minzoom: 9, filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffad4f', 'line-blur': ['interpolate', ['linear'], ['zoom'], 10, 2, 16, 6], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 14, 5, 17, 12], 'line-opacity': 0 } },
             { id: 'roads-core', type: 'line', source: 'osm', 'source-layer': 'transportation', minzoom: 11, filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffe2b8', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, .4, 16, 1.4], 'line-opacity': 0 } },
-            { id: 'buildings', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 14.5, paint: {
+            { id: 'buildings', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 13.5, paint: {
               'fill-extrusion-color': '#e6dccb',
-              'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14.5, 0, 15.5, ['coalesce', ['get', 'render_height'], 6]],
+              'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 13.5, 0, 15, ['coalesce', ['get', 'render_height'], 6]],
               'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
               'fill-extrusion-opacity': .82, 'fill-extrusion-vertical-gradient': true } }
           ]
