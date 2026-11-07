@@ -788,12 +788,14 @@ var MapCtl = window.__mapctl = {
           version: 8,
           glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
           sources: {
+            satlo: { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 5 },
             sat: { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' },
             night: { type: 'raster', tiles: ['https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png'], tileSize: 256, maxzoom: 8, attribution: 'NASA Black Marble' },
             osm: { type: 'vector', url: 'https://tiles.openfreemap.org/planet', attribution: '© OpenMapTiles © OpenStreetMap' }
           },
           layers: [
-            { id: 'bg', type: 'background', paint: { 'background-color': '#05080f' } },
+            { id: 'bg', type: 'background', paint: { 'background-color': '#2a2620' } },
+            { id: 'satlo', type: 'raster', source: 'satlo', paint: { 'raster-fade-duration': 0 } },
             { id: 'sat', type: 'raster', source: 'sat', paint: { 'raster-fade-duration': 250 } },
             { id: 'city', type: 'raster', source: 'night', maxzoom: 12, paint: { 'raster-opacity': 0 } },
             { id: 'roads-glow', type: 'line', source: 'osm', 'source-layer': 'transportation', minzoom: 9, filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffad4f', 'line-blur': ['interpolate', ['linear'], ['zoom'], 10, 2, 16, 6], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 14, 5, 17, 12], 'line-opacity': 0 } },
@@ -827,7 +829,8 @@ var MapCtl = window.__mapctl = {
     root.setProperty('--sun-x', (t.az > 180 ? 8 : 92) + '%');
     document.body.dataset.tod = t.name;
     if (!m || !m.isStyleLoaded()) return;
-    m.setPaintProperty('sat', 'raster-brightness-max', t.br);
+    ['sat', 'satlo'].forEach(function (L) { m.setPaintProperty(L, 'raster-brightness-max', t.br); m.setPaintProperty(L, 'raster-saturation', t.sa); m.setPaintProperty(L, 'raster-contrast', t.co); });
+    m.setPaintProperty('bg', 'background-color', mixHex('#05080f', '#3a3328', Math.max(0, Math.min(1, t.br))));
     m.setPaintProperty('sat', 'raster-saturation', t.sa);
     m.setPaintProperty('sat', 'raster-contrast', t.co);
     m.setPaintProperty('city', 'raster-opacity', ['interpolate', ['linear'], ['zoom'], 6, t.city * .9, 9, t.city * .55, 11.5, 0]);
