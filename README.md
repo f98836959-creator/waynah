@@ -1,5 +1,7 @@
-# Waynah · وينه
+# وينه
 
-Waynah demo app: drivers request a car part, shops in Al Mabaila industrial area reply with offers.
+نسخة تجريبية من منصة وينه لقطع الغيار في صناعية المعبيلة.
 
-Live: https://f98836959-creator.github.io/waynah/
+- `index.html`: الموقع كامل (السائق، المحل، لوحة الفريق).
+- `img/`: الشخصية وصور القطع.
+- البيانات محفوظة في Supabase وتتحدث مباشرة بين الأجهزة.
