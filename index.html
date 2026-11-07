@@ -846,7 +846,7 @@ var MapCtl = window.__mapctl = {
     clearTimeout(this.fxT[cls]); this.fxT[cls] = setTimeout(function () { f.classList.remove(cls); }, ms || 1700);
   },
   lap: function () { return window.innerWidth >= 960; },
-  pad: function () { var h = window.innerHeight; return this.lap() ? { top: 90, bottom: 60, left: 520, right: 60 } : { top: 70, bottom: Math.round(h * 0.5), left: 24, right: 24 }; },
+  pad: function () { var h = window.innerHeight; return this.lap() ? { top: 90, bottom: 60, left: 520, right: 260 } : { top: 70, bottom: Math.round(h * 0.5), left: 24, right: 120 }; },
   bounds: function (pts) { var b = new maplibregl.LngLatBounds(); pts.forEach(function (p) { b.extend([p[1], p[0]]); }); return b; },
   shopPts: function () { var p = allShops().map(function (s) { return [s.lat, s.lng]; }); return p.length > 1 ? p : [[AREA.lat - .008, AREA.lng - .01], [AREA.lat + .008, AREA.lng + .01]]; },
   fly: function (opt, cb) {
