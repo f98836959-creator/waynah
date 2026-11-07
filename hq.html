@@ -1,4 +1,5 @@
 <title>مقر وينه</title>
+<script>document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar");</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +19,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body{margin:0;direction:rtl;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
 button,textarea,input{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--caramel-2);outline-offset:2px;border-radius:8px}
@@ -515,7 +516,7 @@ var World = (function () {
   var cam = new T.OrthographicCamera(-1, 1, 1, -1, -300, 300);
   var target = new T.Vector3(0, 0, 0), zoom = .4, zoomGoal = 1, VIEW = 50;
   var ISO = new T.Vector3(1, 0.95, 1).normalize();
-  function placeCam() { cam.position.copy(target).addScaledVector(ISO, 120); cam.lookAt(target); var a = canvas.clientWidth / Math.max(1, canvas.clientHeight), h = VIEW / zoom; if (a < 1) h = h / Math.max(a, .5) * .62; cam.left = -h * a / 2; cam.right = h * a / 2; cam.top = h / 2; cam.bottom = -h / 2; cam.updateProjectionMatrix(); }
+  function placeCam() { cam.position.copy(target).addScaledVector(ISO, 120); cam.lookAt(target); var a = canvas.clientWidth / Math.max(1, canvas.clientHeight), h = (a < 1.05 ? Math.max(VIEW, 54 / a) : VIEW) / zoom; cam.left = -h * a / 2; cam.right = h * a / 2; cam.top = h / 2; cam.bottom = -h / 2; cam.updateProjectionMatrix(); }
   scene.add(new T.HemisphereLight(0xC9D8FF, 0x1A1E36, 0.95));
   var sun = new T.DirectionalLight(0xFFF1DD, 0.7); sun.position.set(18, 40, 26); scene.add(sun);
   var fillL = new T.DirectionalLight(0x8FA8FF, 0.25); fillL.position.set(-30, 20, -10); scene.add(fillL);
@@ -638,7 +639,7 @@ var World = (function () {
     dt.rotation = Math.PI / 2; dt.center.set(.5, .5);
     dash.rotation.order = 'YXZ'; dash.rotation.y = ang; dash.rotation.x = -Math.PI / 2; dash.position.set(mid.x, .02, mid.z); scene.add(dash);
     rooms[t.id] = { g: g, cx: cx, cz: cz, light: roomLight, start: start, edge: edge, dashTex: dt, busy: false };
-    rooms[t.id].label = addLabel('', new T.Vector3(cx - W / 2 + 1.6, 3.7, cz - D / 2 + .4), { team: t.id });
+    rooms[t.id].label = addLabel('', new T.Vector3(cx - 1, 3.9, cz - D / 2), { team: t.id });
   });
   /* ----- chief ----- */
   var chief = makePerson(EMP.chief, 0xF1E4CB, true); chief.home = new T.Vector3(2.4, 0, 3.6); chief.root.position.copy(chief.home); people.chief = chief; scene.add(chief.root); setPose(chief, 'stand'); chief.root.rotation.y = Math.PI * 1.25;
@@ -706,7 +707,7 @@ var World = (function () {
   function pick(cx, cy) { var u = hit(cx, cy); if (!u) return; if (u.kind === 'person') openPanel(u.id === 'chief' ? 'chief' : 'emp:' + u.id); else if (u.kind === 'room') openPanel('team:' + u.team); else if (u.kind === 'brain') openPanel('brain'); }
   function hover(ev) { if (ev.pointerType !== 'mouse') return; var u = hit(ev.clientX, ev.clientY); var id = u && u.kind === 'person' ? u.id : null; canvas.style.cursor = u ? 'pointer' : 'grab'; if (id !== hovered) { hovered = id; sync(); } }
   function focus(where) { var r = where === 'brain' ? { cx: 0, cz: 0 } : rooms[where]; if (!r) return; var mob = canvas.clientWidth < 820; fly = { from: target.clone(), to: new T.Vector3(r.cx, 0, r.cz + (mob ? 4 : 0)), t: 0, z0: zoomGoal, z1: where === 'brain' ? 1.3 : (mob ? 1.5 : 1.8) }; }
-  function fit() { fly = { from: target.clone(), to: new T.Vector3(), t: 0, z0: zoomGoal, z1: 1 }; }
+  function fit() { fly = { from: target.clone(), to: new T.Vector3(), t: 0, z0: zoomGoal, z1: canvas.clientWidth < 820 ? 1.15 : .92 }; }
   $('#zin').onclick = function () { zoomGoal = clampZ(zoomGoal * 1.25); };
   $('#zout').onclick = function () { zoomGoal = clampZ(zoomGoal / 1.25); };
   $('#zfit').onclick = fit;
@@ -773,7 +774,7 @@ var World = (function () {
   }
   function resize() { renderer.setSize(canvas.clientWidth, canvas.clientHeight, false); placeCam(); labels.forEach(function (l) { l.w = 0; }); }
   window.addEventListener('resize', resize); resize();
-  zoomGoal = 1; zoom = .45;
+  zoomGoal = canvas.clientWidth < 820 ? 1.15 : .92; zoom = zoomGoal * .45;
   sync(); frame();
   return { ok: true, sync: function () { sync(); }, dispatch: function (id) { packet(EMP[id].team, false); }, returnPacket: function (id) { packet(EMP[id].team, true); }, gather: gather, disperse: disperse, focus: focus, debug: { people: people, rooms: rooms, cam: cam, renderer: renderer } };
 })();
