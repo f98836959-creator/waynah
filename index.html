@@ -771,7 +771,7 @@ function todNow() {
 
 /* ---------------- the live map: MapLibre GL, real 3D camera ---------------- */
 var ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-var MapCtl = {
+var MapCtl = window.__mapctl = {
   map: null, ok: false, failed: false, shops: {}, areas: [], meM: null, stage: '', cat: null, fxT: {}, spin: null, tod: null, beamIds: [], dashT: null,
   can: function () { return !!window.maplibregl && !this.failed; },
   init: function () {
@@ -852,8 +852,16 @@ var MapCtl = {
     if (cb) m.once('moveend', cb);
   },
   flyBounds: function (pts, opt, cb) {
-    var cam = this.map.cameraForBounds(this.bounds(pts), { padding: this.pad(), bearing: opt.bearing || 0 }) || {};
-    this.fly(Object.assign({}, opt, { center: cam.center, zoom: Math.min(opt.maxZoom || 18, (cam.zoom || 14) - (opt.pitch ? .35 : 0)) }), cb);
+    // own fit: MapLibre's cameraForBounds adds the map's stored padding and can return nothing on small phones
+    var MC = maplibregl.MercatorCoordinate, xs = [], ys = [];
+    pts.forEach(function (p) { var c = MC.fromLngLat([p[1], p[0]]); xs.push(c.x); ys.push(c.y); });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    var pd = this.pad(), cv = this.map.getCanvas(), W = cv.clientWidth || window.innerWidth, H = cv.clientHeight || window.innerHeight;
+    var aw = Math.max(80, W - pd.left - pd.right), ah = Math.max(80, H - pd.top - pd.bottom);
+    var z = Math.log2(Math.min(aw / Math.max((x1 - x0) * 512, 1e-9), ah / Math.max((y1 - y0) * 512, 1e-9)));
+    var center = new MC((x0 + x1) / 2, (y0 + y1) / 2).toLngLat();
+    z = Math.max(3, Math.min(opt.maxZoom || 18, z - (opt.pitch ? .45 : .1)));
+    this.fly(Object.assign({}, opt, { center: [center.lng, center.lat], zoom: z }), cb);
   },
   startSpin: function () {
     var self = this, m = this.map; this.stopSpin();
