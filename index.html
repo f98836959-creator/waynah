@@ -371,7 +371,7 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 #fx .vig{position:absolute;inset:0;box-shadow:inset 0 0 160px rgba(0,0,0,.6)}
 
 /* pins */
-.pin{position:relative;width:44px;height:44px;margin:-44px 0 0 -22px!important;transition:opacity .5s,transform .5s var(--spring),filter .5s}
+.pin{width:44px;height:44px;margin:-44px 0 0 -22px!important;transition:opacity .5s,transform .5s var(--spring),filter .5s}
 .pin .dot{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:#FFC37A;box-shadow:0 0 0 3px rgba(255,195,122,.35),0 0 18px rgba(255,195,122,.9)}
 .pin .ring{position:absolute;inset:4px;border-radius:50%;border:2px solid #FFC37A;opacity:0}
 .pin .lbl{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;white-space:nowrap;font-size:11px;font-weight:700;color:#FFF8EE;text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.8);font-family:var(--f-body);opacity:0;transition:opacity .3s}
@@ -710,10 +710,16 @@ var MapCtl = {
     f.classList.remove(cls); void f.offsetWidth; f.classList.add(cls);
     clearTimeout(this.fxT[cls]); this.fxT[cls] = setTimeout(function () { f.classList.remove(cls); }, ms || 1700);
   },
+  lap: function () { return window.innerWidth >= 960; },
+  aim: function (lat, lng, zoom) {
+    var sz = this.map.getSize(), off = this.lap() ? [-244, 0] : [0, Math.round(sz.y * 0.27)];
+    return this.map.unproject(this.map.project([lat, lng], zoom).add(off), zoom);
+  },
+  pad: function () { var sz = this.map.getSize(); return this.lap() ? { paddingTopLeft: [500, 90], paddingBottomRight: [60, 60] } : { paddingTopLeft: [30, 80], paddingBottomRight: [30, Math.round(sz.y * 0.56)] }; },
   gta: function (lat, lng, zoom, dur, cb) {
     var self = this, el = document.getElementById('map');
     this.fx('flash', 800); this.fx('rush', 1700); el.classList.add('rush');
-    this.map.flyTo([lat, lng], zoom, { duration: dur, easeLinearity: 0.15 });
+    this.map.flyTo(this.aim(lat, lng, zoom), zoom, { duration: dur, easeLinearity: 0.15 });
     this.map.once('moveend', function () { el.classList.remove('rush'); self.fx('flash', 700); if (cb) cb(); });
   },
   startDrift: function () { var self = this; this.stopDrift(); this.drift = setInterval(function () { if (self.stage === 'welcome') self.map.panBy([0.6, -0.25], { animate: false }); }, 50); },
@@ -773,12 +779,12 @@ var MapCtl = {
     var self = this, map = this.map;
     if (st === this.stage && st !== 'focus' && st !== 'hatch' && st !== 'route') return;
     var prev = this.stage; this.stage = st;
-    if (st === 'welcome') { this.stopDrift(); this.showShops(false); this.showAreas(false); this.beam(null); if (this.route) { map.removeLayer(this.route); this.route = null; } document.getElementById('map').classList.remove('dim'); this.fx('hatched', 1); map.flyTo([22.9, 57.9], 6.6, { duration: prev ? 1.8 : 0 }); this.startDrift(); }
+    if (st === 'welcome') { this.stopDrift(); this.showShops(false); this.showAreas(false); this.beam(null); if (this.route) { map.removeLayer(this.route); this.route = null; } document.getElementById('map').classList.remove('dim'); this.fx('hatched', 1); map.flyTo(this.aim(22.9, 57.9, 6.6), 6.6, { duration: prev ? 1.8 : 0 }); this.startDrift(); }
     if (st === 'area') { this.stopDrift(); this.showShops(false); this.beam(null); this.gta(23.62, 58.25, 10.2, 2.2, function () { self.showAreas(true); }); }
     if (st === 'dive') { this.showAreas(false); this.gta(AREA.lat, AREA.lng, AREA.zoom, 2.6, function () { self.showShops(true); self.showMe(false); if (self.cat) setTimeout(function () { self.hatch(self.cat); }, 400); }); }
-    if (st === 'offers') { this.showShops(true); this.showMe(true); map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], [AREA.lat, AREA.lng]]).pad(.15), { duration: 1.6, paddingTopLeft: [40, 80], paddingBottomRight: [40, 60] }); var ids = (arg || []).map(function (s) { return s.id; }); setTimeout(function () { self.beam(ids); }, 1200); }
-    if (st === 'focus') { var m = this.shops[arg]; this.beam(null); if (m) map.flyTo(m.getLatLng(), 17, { duration: 1.4 }); }
-    if (st === 'route') { this.showMe(true); this.beam(null); this.drawRoute(arg); var mm = this.shops[arg]; if (mm) map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], mm.getLatLng()]).pad(.2), { duration: 1.6 }); }
+    if (st === 'offers') { this.showShops(true); this.showMe(true); map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], [AREA.lat, AREA.lng]]).pad(.15), Object.assign({ duration: 1.6 }, this.pad())); var ids = (arg || []).map(function (s) { return s.id; }); setTimeout(function () { self.beam(ids); }, 1200); }
+    if (st === 'focus') { var m = this.shops[arg]; this.beam(null); if (m) map.flyTo(this.aim(m.getLatLng().lat, m.getLatLng().lng, 17), 17, { duration: 1.4 }); }
+    if (st === 'route') { this.showMe(true); this.beam(null); this.drawRoute(arg); var mm = this.shops[arg]; if (mm) map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], mm.getLatLng()]).pad(.2), Object.assign({ duration: 1.6 }, this.pad())); }
   },
   update: function () {
     if (!this.ok) return;
