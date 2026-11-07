@@ -363,14 +363,14 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 .clouds{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 2.4s}
 .clouds.on{opacity:1}.clouds.thin{opacity:.28}
 .clouds i{position:absolute;inset:-60% -120% -60% -20%;background-repeat:repeat;will-change:transform}
-.clouds .sh{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cumsh.webp);background-size:1100px 1100px;opacity:.55;transform:translate3d(60px,90px,0);animation:cloudA 240s linear infinite}
-.clouds .cu{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cum.webp);background-size:1100px 1100px;opacity:.92;animation:cloudB 240s linear infinite;filter:drop-shadow(0 0 0 transparent)}
-.clouds .ci{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cir.webp);background-size:1600px 1600px;mix-blend-mode:screen;opacity:.5;filter:blur(1px);animation:cloudC 420s linear infinite}
-.clouds .cu2{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cum.webp);background-size:1700px 1700px;opacity:.7;filter:blur(1.2px);animation:cloudD 520s linear infinite}
-@keyframes cloudA{from{transform:translate3d(60px,90px,0)}to{transform:translate3d(-1040px,230px,0)}}
-@keyframes cloudB{from{transform:translate3d(0,0,0)}to{transform:translate3d(-1100px,140px,0)}}
+.clouds .sh{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cumsh.webp);background-size:1500px 1500px;opacity:.38;transform:translate3d(60px,90px,0);animation:cloudA 240s linear infinite}
+.clouds .cu{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cum.webp);background-size:1500px 1500px;opacity:.78;animation:cloudB 240s linear infinite;filter:brightness(1.18) contrast(1.04)}
+.clouds .ci{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cir.webp);background-size:1600px 1600px;mix-blend-mode:screen;opacity:.4;filter:blur(1px);animation:cloudC 420s linear infinite}
+.clouds .cu2{background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/sky/cum.webp);background-size:2400px 2400px;opacity:.42;filter:blur(1.4px) brightness(1.15);animation:cloudD 520s linear infinite}
+@keyframes cloudA{from{transform:translate3d(60px,90px,0)}to{transform:translate3d(-1440px,230px,0)}}
+@keyframes cloudB{from{transform:translate3d(0,0,0)}to{transform:translate3d(-1500px,140px,0)}}
 @keyframes cloudC{from{transform:translate3d(0,0,0)}to{transform:translate3d(-1600px,-60px,0)}}
-@keyframes cloudD{from{transform:translate3d(0,0,0)}to{transform:translate3d(-1700px,260px,0)}}
+@keyframes cloudD{from{transform:translate3d(0,0,0)}to{transform:translate3d(-2400px,260px,0)}}
 .sky{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity 2.4s}
 .sky.on{opacity:1}.sky.thin{opacity:.35}
 .sky .sun{position:absolute;inset:0;background:radial-gradient(60% 50% at 88% -8%,rgba(255,214,150,.55),rgba(255,190,120,.18) 30%,transparent 62%)}
