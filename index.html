@@ -214,9 +214,10 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 .sheet .list{overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.tile{min-height:76px;border-radius:16px;border:2px solid transparent;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:600;font-size:14px;box-shadow:var(--sh1);transition:transform .2s var(--ease),border-color .2s}
+.tile{min-height:var(--tile,76px);border-radius:16px;border:2px solid transparent;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:600;font-size:14px;box-shadow:var(--sh1);transition:transform .2s var(--ease),border-color .2s}
 .tile:hover{transform:translateY(-2px)}
-.tile .en{font-family:var(--f-display);font-size:11px;letter-spacing:.08em;color:var(--accent);direction:ltr}
+.tile .en{font-family:var(--f-display);font-size:10px;letter-spacing:.08em;color:var(--accent);direction:ltr}
+.bb{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;color:#fff;font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35),0 4px 10px rgba(0,0,0,.35);margin-bottom:4px;direction:ltr}
 .tile.sel{border-color:var(--caramel);box-shadow:var(--sh1),var(--ring)}
 .li{min-height:56px;border-radius:16px;border:2px solid transparent;background:var(--surface);display:flex;align-items:center;gap:12px;padding:0 14px;text-align:right;width:100%;box-shadow:var(--sh1);transition:transform .2s var(--ease),border-color .2s}
 .li:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--caramel) 40%,transparent)}
@@ -260,7 +261,7 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 @keyframes sway{0%,100%{transform:rotate(-6deg) translateY(-4px)}50%{transform:rotate(6deg) translateY(-4px)}}
 @keyframes hop{0%,100%{transform:translateY(0) scale(1)}15%{transform:translateY(4px) scale(1.06,.92)}45%{transform:translateY(-34px) scale(.96,1.05) rotate(-4deg)}75%{transform:translateY(0) scale(1.04,.95)}}
 @keyframes jump{0%{transform:none}15%{transform:translateY(6px) scale(1.1,.88)}50%{transform:translateY(-46px) rotate(-360deg) scale(.95,1.06)}80%{transform:translateY(0) rotate(-360deg) scale(1.06,.92)}100%{transform:rotate(-360deg)}}
-@keyframes wiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-9deg)}40%{transform:rotate(7deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(3deg)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}60%{transform:rotate(2.5deg)}}
 @keyframes radar{0%{transform:scale(.7);opacity:.85}100%{transform:scale(1.6);opacity:0}}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:70;overflow:hidden}
 .confetti i{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;animation:fall var(--d,1.6s) cubic-bezier(.25,.6,.4,1) forwards}
@@ -350,12 +351,18 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 
 /* ---------- map mode (driver) ---------- */
 #map{position:fixed;inset:0;z-index:0;background:#060B18;filter:saturate(.7) brightness(.78) contrast(1.08);transition:filter .5s}
-#map.rush{filter:saturate(.9) brightness(1.15) contrast(1.15) blur(3px)}
+#map.rush{filter:saturate(.8) brightness(.9) contrast(1.1) blur(2px)}
 #map.dim{filter:saturate(.35) brightness(.5) contrast(1.05)}
 .leaflet-container{font-family:var(--f-body)}
 .leaflet-control-attribution{font-size:9px!important;background:rgba(6,11,24,.6)!important;color:#8b94ad!important;direction:ltr}
 .leaflet-control-attribution a{color:#b9c2da!important}
 .tint{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,transparent 35%,rgba(6,11,24,.55) 100%),linear-gradient(180deg,rgba(6,11,24,.55),transparent 30%,transparent 60%,rgba(6,11,24,.75))}
+.clouds{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 2.2s}
+.clouds.on{opacity:.3}.clouds.thin{opacity:.1}
+.clouds i{position:absolute;inset:-50% -100% -50% 0;background-image:url(https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/mascot/clouds.webp);background-size:900px 900px;background-repeat:repeat;mix-blend-mode:screen;filter:blur(1.5px) brightness(1.1);animation:cloud 160s linear infinite;will-change:transform}
+.clouds i:nth-child(2){background-size:1400px 1400px;opacity:.5;animation-duration:260s;animation-direction:reverse;filter:blur(3px)}
+@keyframes cloud{from{transform:translate3d(0,0,0)}to{transform:translate3d(-900px,120px,0)}}
+body:not(.mapmode) .clouds{display:none}
 #fx{position:fixed;inset:0;z-index:35;pointer-events:none;overflow:hidden}
 #fx .flash{position:absolute;inset:0;background:#fff;opacity:0}
 #fx.flash .flash{animation:gtaflash .7s ease-out both}
@@ -363,12 +370,13 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 #fx .rays{position:absolute;inset:-30%;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.14) 0 2deg,transparent 2deg 7deg);opacity:0;-webkit-mask-image:radial-gradient(circle,transparent 20%,#000 70%);mask-image:radial-gradient(circle,transparent 20%,#000 70%)}
 #fx.rush .rays{animation:rush 1.6s ease-in-out both}
 @keyframes rush{0%{opacity:0;transform:scale(1) rotate(0)}30%{opacity:.9}100%{opacity:0;transform:scale(1.5) rotate(25deg)}}
-#fx .scan{position:absolute;left:0;right:0;height:38%;top:-40%;opacity:0;background:linear-gradient(180deg,transparent,rgba(242,155,63,.22) 55%,rgba(242,155,63,.75) 99%,#FFC37A 100%);mix-blend-mode:screen}
+#fx .scan{position:absolute;left:0;right:0;height:38%;top:-40%;opacity:0;background:linear-gradient(180deg,transparent,rgba(255,255,255,.08) 55%,rgba(255,220,180,.35) 99%,rgba(255,235,210,.8) 100%);mix-blend-mode:screen}
 #fx.scan .scan{animation:scan 1.5s cubic-bezier(.4,0,.2,1) both}
 @keyframes scan{0%{top:-40%;opacity:1}100%{top:110%;opacity:1}}
-#fx .hatch{position:absolute;inset:0;opacity:0;background-image:repeating-linear-gradient(45deg,rgba(242,155,63,.12) 0 2px,transparent 2px 14px);transition:opacity .6s}
+#fx .hatch{position:absolute;inset:0;opacity:0;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 1px,transparent 1px 12px);transition:opacity .6s}
 #fx.hatched .hatch{opacity:1}
-#fx .vig{position:absolute;inset:0;box-shadow:inset 0 0 160px rgba(0,0,0,.6)}
+#fx .vig{position:absolute;inset:0;box-shadow:inset 0 0 160px rgba(0,0,0,.6);transition:box-shadow .8s}
+#fx.vig .vig{box-shadow:inset 0 0 260px rgba(0,0,0,.95)}
 
 /* pins */
 .pin{width:44px;height:44px;margin:-44px 0 0 -22px!important;transition:opacity .5s,filter .5s}
@@ -401,10 +409,11 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.3
 .route-line{stroke:#FFC37A;stroke-width:5;stroke-linecap:round;stroke-dasharray:1 10;filter:drop-shadow(0 0 6px rgba(255,195,122,.8));animation:beam 1s linear infinite}
 
 /* buddy: the mascot that lives on the map */
-#buddy{position:fixed;z-index:34;width:150px;right:8px;top:calc(46vh - 170px);pointer-events:auto;cursor:pointer;user-select:none;-webkit-user-select:none;transition:top .4s,right .4s,width .4s;filter:drop-shadow(0 14px 16px rgba(0,0,0,.5))}
+#buddy{position:fixed;z-index:34;width:124px;right:8px;top:calc(46vh - 170px);pointer-events:auto;cursor:pointer;user-select:none;-webkit-user-select:none;transition:top .4s,right .4s,width .4s;filter:drop-shadow(0 14px 16px rgba(0,0,0,.5))}
 #buddy .pz{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:bottom;opacity:0;transform:translateY(14px) scale(.9);transition:opacity .35s,transform .5s var(--spring)}
 #buddy .pz.on{opacity:1;transform:none}
-#buddy .fr{position:relative;width:100%;aspect-ratio:1;animation:float 4.2s ease-in-out infinite}
+#buddy .fr{position:relative;width:100%;aspect-ratio:1;animation:floatsoft 5s ease-in-out infinite}
+@keyframes floatsoft{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 #buddy.jump .fr{animation:jump .85s var(--ease)}
 #buddy.wiggle .fr{animation:wiggle .8s ease-in-out,float 4.2s ease-in-out .8s infinite}
 #buddy .bub{position:absolute;bottom:88%;right:62%;max-width:220px;min-width:120px;background:#FFF8EE;color:#12234D;font-family:var(--f-display);font-weight:600;font-size:13px;line-height:1.5;padding:9px 13px;border-radius:18px 18px 4px 18px;box-shadow:0 12px 30px rgba(0,0,0,.45);opacity:0;transform:scale(.5) translateY(10px);transform-origin:100% 100%;transition:opacity .25s,transform .4s var(--spring);pointer-events:none;text-align:right}
@@ -460,8 +469,8 @@ body.mapmode .pill.p-info{background:rgba(255,255,255,.12);color:#F4EEE3}
 .area.soon{opacity:.6;cursor:not-allowed}
 .area.soon::after{content:"قريباً";position:absolute;top:10px;left:10px;font-size:10px;font-weight:700;color:#FFC37A;background:rgba(242,155,63,.15);padding:2px 8px;border-radius:999px}
 .catgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.cat{min-height:84px;border-radius:16px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;font-size:13px;color:#F4EEE3;transition:transform .2s var(--spring),border-color .25s,background .25s}
-.cat img{width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+.cat{min-height:104px;border-radius:16px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;font-size:13px;color:#F4EEE3;transition:transform .2s var(--spring),border-color .25s,background .25s}
+.cat img{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.55))}
 .cat .ic{font-size:26px;line-height:1}
 .cat:hover{transform:translateY(-2px);border-color:rgba(255,195,122,.6)}
 .cat.on{background:var(--btn-acc);color:#2A1404;border-color:transparent;box-shadow:var(--glow-acc);transform:scale(1.04)}
@@ -483,7 +492,7 @@ body.mapmode .pill.p-info{background:rgba(255,255,255,.12);color:#F4EEE3}
   body.mapmode .app.v-welcome,body.mapmode .app.v-thanks,body.mapmode .app.v-login{justify-content:center}
   body.mapmode .app.v-welcome .welcome-title{font-size:84px}
   body.mapmode .app.v-chat .chat{flex:1}
-  #buddy{right:40px;top:auto;bottom:34px;width:240px}
+  #buddy{right:36px;top:auto;bottom:28px;width:200px}
   #buddy .bub{font-size:15px;max-width:260px}
   .tint{background:radial-gradient(120% 90% at 65% 45%,transparent 35%,rgba(6,11,24,.6) 100%),linear-gradient(90deg,rgba(6,11,24,.8) 0%,rgba(6,11,24,.4) 520px,transparent 700px)}
 }
@@ -495,7 +504,7 @@ body.mapmode .pill.p-info{background:rgba(255,255,255,.12);color:#F4EEE3}
 </head>
 <body>
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
-<div id="map" aria-hidden="true"></div><div class="tint" aria-hidden="true"></div>
+<div id="map" aria-hidden="true"></div><div class="tint" aria-hidden="true"></div><div class="clouds" id="clouds" aria-hidden="true"><i></i><i></i></div>
 <div id="fx" aria-hidden="true"><div class="hatch"></div><div class="rays"></div><div class="scan"></div><div class="vig"></div><div class="flash"></div></div>
 <header class="topbar">
   <a class="brand" href="#driver" aria-label="وينه"><img src="img/head.webp" alt=""><b>وينه</b></a>
@@ -560,7 +569,8 @@ function guard(text) {
   var flagged = /\d[\d\s-]{6,}\d/.test(text) || /واتس|واتساب|whats|انستا|سناب|تلي?جرام|كلمني برا|برا التطبيق/i.test(text);
   return { text: text.replace(/\+?\d[\d\s-]{6,}\d/g, '[رقم مخفي]'), flagged: flagged };
 }
-var IMG = { mascot: 'img/waynah.webp', head: 'img/head.webp', tyre: 'img/tyre.svg', battery: 'img/battery.svg', oil: 'img/oil.svg', pads: 'img/pads.svg', filter: 'img/filter.svg', headlight: 'img/headlight.svg' };
+var PZ = 'https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/parts/';
+var IMG = { mascot: 'img/waynah.webp', head: 'img/head.webp', tyre: PZ + 'tyre.webp', battery: PZ + 'battery.webp', oil: PZ + 'oil.webp', pads: PZ + 'pads.webp', filter: PZ + 'filter.webp', headlight: PZ + 'light.webp', ac: PZ + 'ac.webp', engine: PZ + 'engine.webp', body: PZ + 'body.webp' };
 var ICON = {
   back: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
   cam: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
@@ -592,6 +602,8 @@ var CARS = [
   ['changan', 'CHANGAN', 'شانجان', 'CS35 Plus،CS75 Plus،ألسفين،UNI-T'],
   ['isuzu', 'ISUZU', 'إيسوزو', 'D-Max،MU-X']
 ].map(function (c) { return { id: c[0], en: c[1], ar: c[2], models: c[3].split('،') }; });
+var BRAND_COLOR = { toyota: '#C8102E', lexus: '#1A1A1A', nissan: '#C3002F', mercedes: '#2B2B2B', bmw: '#0066B1', hyundai: '#002C5F', kia: '#05141F', honda: '#CC0000', mitsubishi: '#E60012', ford: '#003478', chevrolet: '#D4A017', gmc: '#B22222', landrover: '#005A2B', mazda: '#101010', suzuki: '#E4002B', jeep: '#3A5F3A', mg: '#8B0000', changan: '#1F4E79', isuzu: '#C8102E' };
+var brandBadge = function (b) { var l = b.en.replace(/[^A-Z]/g, '').slice(0, 2); return '<span class="bb" style="background:' + (BRAND_COLOR[b.id] || '#333') + '">' + l + '</span>'; };
 var DIAL = 'AF93,AL355,DZ213,AD376,AO244,AR54,AM374,AU61,AT43,AZ994,BH973,BD880,BY375,BE32,BJ229,BT975,BO591,BA387,BW267,BR55,BN673,BG359,BF226,BI257,KH855,CM237,CA1,CV238,CF236,TD235,CL56,CN86,CO57,KM269,CG242,CD243,CR506,CI225,HR385,CU53,CY357,CZ420,DK45,DJ253,DO1809,EC593,EG20,SV503,GQ240,ER291,EE372,SZ268,ET251,FJ679,FI358,FR33,GA241,GM220,GE995,DE49,GH233,GR30,GT502,GN224,GW245,GY592,HT509,HN504,HK852,HU36,IS354,IN91,ID62,IR98,IQ964,IE353,IT39,JM1876,JP81,JO962,KZ7,KE254,KW965,KG996,LA856,LV371,LB961,LS266,LR231,LY218,LI423,LT370,LU352,MO853,MG261,MW265,MY60,MV960,ML223,MT356,MR222,MU230,MX52,MD373,MC377,MN976,ME382,MA212,MZ258,MM95,NA264,NP977,NL31,NZ64,NI505,NE227,NG234,MK389,NO47,OM968,PK92,PS970,PA507,PG675,PY595,PE51,PH63,PL48,PT351,QA974,RO40,RU7,RW250,SA966,SN221,RS381,SC248,SL232,SG65,SK421,SI386,SO252,ZA27,SS211,ES34,LK94,SD249,SR597,SE46,CH41,SY963,TW886,TJ992,TZ255,TH66,TG228,TT1868,TN216,TR90,TM993,UG256,UA380,AE971,GB44,US1,UY598,UZ998,VE58,VN84,YE967,ZM260,ZW263';
 var COUNTRIES = (function () {
   var dn = null; try { dn = new Intl.DisplayNames(['ar'], { type: 'region' }); } catch (e) {}
@@ -614,9 +626,9 @@ var CATS = [
   { id: 'pads', ar: 'فحمات', img: 'pads', re: /فحم|بريك|فرامل/, base: 22, ar1: 'فحمات' },
   { id: 'filter', ar: 'فلاتر', img: 'filter', re: /فلتر/, base: 6, ar1: 'فلتر' },
   { id: 'light', ar: 'إنارة', img: 'headlight', re: /شمع|ليت|ضوء|كشاف|سطب|إنار|انار/, base: 38, ar1: 'شمعة' },
-  { id: 'ac', ar: 'مكيف', ic: '❄️', re: /كمبروسر|مكيف|كندس|ثلاج/, base: 95, ar1: 'كمبروسر مكيف' },
-  { id: 'engine', ar: 'محرك', ic: '⚙️', re: /محرك|مكينة|ماكينة|دينمو|سلف|طرمبة|بواجي|بوجي|قير|جير/, base: 55, ar1: 'قطعة محرك' },
-  { id: 'body', ar: 'بودي', ic: '🚗', re: /بودي|صدام|مراي|باب|كبوت|شنطة|رفرف/, base: 26, ar1: 'قطعة بودي' }
+  { id: 'ac', ar: 'مكيف', img: 'ac', re: /كمبروسر|مكيف|كندس|ثلاج/, base: 95, ar1: 'كمبروسر مكيف' },
+  { id: 'engine', ar: 'محرك', img: 'engine', re: /محرك|مكينة|ماكينة|دينمو|سلف|طرمبة|بواجي|بوجي|قير|جير/, base: 55, ar1: 'قطعة محرك' },
+  { id: 'body', ar: 'بودي', img: 'body', re: /بودي|صدام|مراي|باب|كبوت|شنطة|رفرف/, base: 26, ar1: 'قطعة بودي' }
 ];
 var CAT_BY_LABEL = { 'إطارات': 'tyre', 'بطاريات': 'battery', 'زيوت': 'oil', 'فلاتر': 'filter', 'فحمات': 'pads', 'قطع محرك': 'engine', 'قطع بودي': 'body', 'كهرباء': 'engine', 'مكيف': 'ac', 'إنارة': 'light' };
 function catOf(part) { var p = part || ''; for (var i = 0; i < CATS.length; i++) if (CATS[i].re.test(p)) return CATS[i]; return null; }
@@ -651,18 +663,18 @@ function shopsFor(cat) { return allShops().filter(function (s) { return !cat || 
 var MZ = 'https://sjlqtlmpgypcmylcycpz.supabase.co/storage/v1/object/public/photos/mascot/';
 var POSES = ['wave', 'intro', 'think', 'jump', 'search', 'thumbs', 'tyre', 'run', 'cool', 'pin', 'sad', 'look', 'chat'];
 var SAY = {
-  welcome: ['هلا والله! أنا وينه. أعرف وين كل قطعة في الصناعية 😎', 'لا تلف بالحر. قل لي وش تبي وأنا أدلّك.'],
-  area: ['طلّعنا فوق… اختر الصناعية اللي تبيها 🛰️', 'المعبيلة جاهزة. الباقي قاعدين نفتحهم.'],
-  part: ['وش القطعة؟ أشوف لك مين عنده 🔍', 'اضغط على قسم وأدوّر لك على طول.'],
-  found: ['لقيت لك {n} محلات عندها {cat}! 🎯', '{n} محلات في المعبيلة عندها اللي تبي.'],
-  none: ['ولا محل عنده هالقطعة الحين 😓 جرّب قسم ثاني.'],
-  offers: ['أرسلت طلبك… المحلات قاعدة تشوفه 👀'],
-  got: ['وصلتك عروض! قارن واختر 🎉', 'شفت؟ ولا طلعت من البيت.'],
-  chat: ['كلّمه هنا. رقمك محفوظ عندي 🤫'],
-  booked: ['محجوزة! رسمت لك الطريق 🏁'],
-  done: ['يا سلام! قيّم المحل عشان غيرك يستفيد ⭐'],
-  thanks: ['تسلم! أي قطعة ثانية؟ أنا هنا 👋'],
-  poke: ['هههه لا تدغدغني 😂', 'ركّز على القطعة يا بطل!', 'أنا مو زر، أنا وينه 😎', 'تبي نكتة؟ البطارية… ما عندها طاقة للنكت 🔋', 'لو كل واحد يلف الصناعية بنفسه، ليش أنا موجود؟']
+  welcome: ['هلا. قل لي وش تدوّر عليه، وأنا أوصّلك له.', 'بدل ما تلف الصناعية، خلّ المحلات تجيك.'],
+  area: ['اختر الصناعية اللي تبي تدوّر فيها.'],
+  part: ['اختر القسم، وأوريك مين عنده القطعة.'],
+  found: ['{n} محلات في المعبيلة عندها {cat}.'],
+  none: ['ما في محل عنده هذا القسم الحين. جرّب قسم ثاني.'],
+  offers: ['وصل طلبك للمحلات. أول ما يردون يطلع لك هنا.'],
+  got: ['وصلتك عروض. قارن السعر والحالة واختر.'],
+  chat: ['تفاهم مع المحل هنا. رقمك ما يطلع له.'],
+  booked: ['تم الحجز. الطريق مرسوم لك على الخريطة.'],
+  done: ['استلمت قطعتك. تقييمك يساعد غيرك.'],
+  thanks: ['شكراً لك. أي قطعة ثانية، أنا هنا.'],
+  poke: ['أنا وينه. أعرف وين كل قطعة في الصناعية.', 'كل اللي عليك تكتب القطعة، والباقي عليّ.', 'المحلات ترد عليك هنا، بدون اتصالات.']
 };
 var Buddy = {
   el: null, cur: '', bt: null, vid: null,
@@ -672,8 +684,8 @@ var Buddy = {
     el.innerHTML = '<div class="fr">' + POSES.map(function (p) { return '<img class="pz" data-p="' + p + '" alt="" draggable="false">'; }).join('') + '<video class="pz vid" muted playsinline loop preload="none" data-p="video"></video><div class="shd"></div></div><div class="bub"></div>';
     document.body.appendChild(el); this.el = el;
     var self = this;
-    el.addEventListener('click', function () { self.jump(); self.say(SAY.poke[Math.floor(Math.random() * SAY.poke.length)], 2600); });
-    setInterval(function () { if (self.el.style.display !== 'none' && document.visibilityState === 'visible') { self.el.classList.remove('wiggle'); void self.el.offsetWidth; self.el.classList.add('wiggle'); } }, 8000);
+    el.addEventListener('click', function () { self.el.classList.remove('wiggle'); void self.el.offsetWidth; self.el.classList.add('wiggle'); self.say(SAY.poke[Math.floor(Math.random() * SAY.poke.length)], 2600); });
+    setInterval(function () { if (self.el.style.display !== 'none' && document.visibilityState === 'visible') { self.el.classList.remove('wiggle'); void self.el.offsetWidth; self.el.classList.add('wiggle'); } }, 20000);
   },
   show: function (on) { if (this.el) this.el.style.display = on ? '' : 'none'; if (on && !this.introReady && !this.introLoading) { var self = this; this.introLoading = true; var im = new Image(); im.onload = function () { self.introReady = true; if (S.d.view === 'welcome' && self.cur === 'wave') { self.cur = ''; self.pose('intro'); } }; im.src = MZ + 'intro.webp'; } },
   pose: function (p) {
@@ -722,10 +734,10 @@ var MapCtl = {
   pad: function () { var sz = this.map.getSize(); return this.lap() ? { paddingTopLeft: [500, 90], paddingBottomRight: [60, 60] } : { paddingTopLeft: [30, 80], paddingBottomRight: [30, Math.round(sz.y * 0.56)] }; },
   gta: function (lat, lng, zoom, dur, cb) {
     var self = this, el = document.getElementById('map');
-    this.fx('flash', 800); this.fx('rush', 1700); el.classList.add('rush');
-    if (lat && lat.getSouthWest) this.map.flyToBounds(lat, Object.assign({ duration: dur, easeLinearity: 0.15 }, this.pad()));
-    else this.map.flyTo(this.aim(lat, lng, zoom), zoom, { duration: dur, easeLinearity: 0.15 });
-    this.map.once('moveend', function () { el.classList.remove('rush'); self.fx('flash', 700); if (cb) cb(); });
+    this.fx('vig', 2600); el.classList.add('rush');
+    if (lat && lat.getSouthWest) this.map.flyToBounds(lat, Object.assign({ duration: dur, easeLinearity: 0.08 }, this.pad()));
+    else this.map.flyTo(this.aim(lat, lng, zoom), zoom, { duration: dur, easeLinearity: 0.08 });
+    this.map.once('moveend', function () { el.classList.remove('rush'); if (cb) cb(); });
   },
   startDrift: function () { var self = this; this.stopDrift(); this.drift = setInterval(function () { if (self.stage === 'welcome') self.map.panBy([0.6, -0.25], { animate: false }); }, 50); },
   stopDrift: function () { clearInterval(this.drift); this.drift = null; },
@@ -784,9 +796,10 @@ var MapCtl = {
     var self = this, map = this.map;
     if (st === this.stage && st !== 'focus' && st !== 'hatch' && st !== 'route') return;
     var prev = this.stage; this.stage = st;
+    var cl = document.getElementById('clouds'); if (cl) { cl.classList.toggle('on', st === 'welcome' || st === 'area'); cl.classList.toggle('thin', st === 'offers' || st === 'route'); }
     if (st === 'welcome') { this.stopDrift(); this.showShops(false); this.showAreas(false); this.beam(null); if (this.route) { map.removeLayer(this.route); this.route = null; } document.getElementById('map').classList.remove('dim'); this.fx('hatched', 1); map.flyTo(this.aim(22.9, 57.9, 6.6), 6.6, { duration: prev ? 1.8 : 0 }); this.startDrift(); }
-    if (st === 'area') { this.stopDrift(); this.showShops(false); this.beam(null); this.gta(23.62, 58.25, 10.2, 2.2, function () { self.showAreas(true); }); }
-    if (st === 'dive') { this.showAreas(false); this.gta(this.shopBounds(), null, null, 2.6, function () { self.showShops(true); self.showMe(false); if (self.cat) setTimeout(function () { self.hatch(self.cat); }, 400); }); }
+    if (st === 'area') { this.stopDrift(); this.showShops(false); this.beam(null); this.gta(23.62, 58.25, 10.2, 3, function () { self.showAreas(true); }); }
+    if (st === 'dive') { this.showAreas(false); this.gta(this.shopBounds(), null, null, 3.4, function () { self.showShops(true); self.showMe(false); if (self.cat) setTimeout(function () { self.hatch(self.cat); }, 400); }); }
     if (st === 'offers') { this.showShops(true); this.showMe(true); map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], [AREA.lat, AREA.lng]]).pad(.15), Object.assign({ duration: 1.6 }, this.pad())); var ids = (arg || []).map(function (s) { return s.id; }); setTimeout(function () { self.beam(ids); }, 1200); }
     if (st === 'focus') { var m = this.shops[arg]; this.beam(null); if (m) map.flyTo(this.aim(m.getLatLng().lat, m.getLatLng().lng, 17), 17, { duration: 1.4 }); }
     if (st === 'route') { this.showMe(true); this.beam(null); this.drawRoute(arg); var mm = this.shops[arg]; if (mm) map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], mm.getLatLng()]).pad(.2), Object.assign({ duration: 1.6 }, this.pad())); }
@@ -994,7 +1007,7 @@ function mascotInner(alt) {
 }
 function mascotHTML(o) {
   o = o || {};
-  var orbit = o.orbit ? '<span class="orbit" aria-hidden="true"><span><img src="' + IMG.tyre + '" alt=""></span><span><img src="' + IMG.battery + '" alt=""></span><span><img src="' + IMG.oil + '" alt=""></span><span><img src="' + IMG.filter + '" alt=""></span></span>' : '';
+  var orbit = '';
   return '<div class="mascot ' + (o.mood || '') + '" style="--ms:' + (o.size || 250) + 'px" role="img" aria-label="' + esc(o.alt || 'شخصية وينه') + '">' + mascotInner(o.alt) + orbit + '</div>';
 }
 function poke(m, text) {
@@ -1006,6 +1019,7 @@ function poke(m, text) {
   clearTimeout(m._bt); m._bt = setTimeout(function () { b.classList.remove('on'); }, 2600);
 }
 function confetti() {
+  if (true) return;
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var c = document.createElement('div'), cols = ['#F29B3F', '#FFC37A', '#17337A', '#2A56BD', '#A4551A', '#FFF8EE'];
   c.className = 'confetti';
@@ -1101,7 +1115,7 @@ function render() {
   }
   var ch = $('.chat');
   if (ch) { var n = ch.children.length; if (n > lastChat && lastChat > 0 && ch.lastElementChild) ch.lastElementChild.classList.add('fresh'); lastChat = n; } else lastChat = 0;
-  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.invalidateSize(); Buddy.init(); Buddy.show(true); MapCtl.update(); } else { Buddy.show(false); Stage.update(r); }
+  if (mapmode) { var fresh = !MapCtl.map; MapCtl.init(); if (!fresh && MapCtl.map && !document.body._wasMap) MapCtl.map.invalidateSize(); Buddy.init(); Buddy.show(!(S.d.sheet || S.d.picker)); MapCtl.update(); } else { Buddy.show(false); Stage.update(r); }
   document.body._wasMap = mapmode;
   document.body.style.paddingBottom = '';
   if (aid) { var n = document.getElementById(aid); if (n) { n.focus({ preventScroll: true }); try { if (ss != null) n.setSelectionRange(ss, se); } catch (e) {} } }
@@ -1265,7 +1279,7 @@ var Driver = {
   carSheet: function () {
     var cs = S.d.cs, q = (cs.q || '').trim().toLowerCase(), brand = CARS.filter(function (b) { return b.id === cs.brand; })[0], body = '';
     var title = { brand: 'وش نوع سيارتك؟', model: 'أي موديل؟', year: 'سنة الصنع؟' }[cs.step];
-    if (cs.step === 'brand') body = '<div class="grid3">' + CARS.filter(function (b) { return !q || b.ar.indexOf(q) >= 0 || b.en.toLowerCase().indexOf(q) >= 0; }).map(function (b) { return '<button class="tile' + (b.id === me.car.brand ? ' sel' : '') + '" data-act="d-cs-brand" data-v="' + b.id + '"><span class="en">' + b.en + '</span>' + esc(b.ar) + '</button>'; }).join('') + '</div>';
+    if (cs.step === 'brand') body = '<div class="grid3" style="--tile:96px">' + CARS.filter(function (b) { return !q || b.ar.indexOf(q) >= 0 || b.en.toLowerCase().indexOf(q) >= 0; }).map(function (b) { return '<button class="tile' + (b.id === me.car.brand ? ' sel' : '') + '" data-act="d-cs-brand" data-v="' + b.id + '">' + brandBadge(b) + '<span class="en">' + b.en + '</span>' + esc(b.ar) + '</button>'; }).join('') + '</div>';
     if (cs.step === 'model') body = brand.models.filter(function (m) { return !q || m.toLowerCase().indexOf(q) >= 0; }).map(function (m) { return '<button class="li' + (brand.id === me.car.brand && m === me.car.model ? ' sel' : '') + '" data-act="d-cs-model" data-v="' + esc(m) + '"><b class="grow">' + esc(m) + '</b></button>'; }).join('');
     if (cs.step === 'year') { var ys = ''; for (var y = 2026; y >= 2005; y--) ys += '<button class="tile" style="min-height:50px;font-family:var(--f-display)" data-act="d-cs-year" data-v="' + y + '">' + y + '</button>'; body = '<div class="grid4">' + ys + '</div>'; }
     return '<div class="sheet-wrap" data-act="d-cs-close-bg"><div class="sheet" role="dialog" aria-modal="true" aria-label="' + title + '">' +
@@ -1515,7 +1529,7 @@ function demoReply(rid, sid, text) {
     var o = (r.offers || {})[sid] || {};
     var ms = msgsOf(r, sid), last = o.price; ms.forEach(function (m) { if (m.kind === 'offer') last = m.price; });
     if (/سعر|تنزل|آخر|اخر|خصم|غالي/.test(text) && r.status === 'open') { var np = Math.max(1, Math.round(last * 0.93)); addMsg(rid, { from: 's', shopId: sid, text: 'عشانك، آخر سعر ' + np + '.' }).then(function () { return addMsg(rid, { from: 's', shopId: sid, kind: 'offer', price: np }); }); }
-    else if (/صور/.test(text)) addMsg(rid, { from: 's', shopId: sid, text: 'أكيد، هذي صورة ثانية.', img: o.img || IMG.headlight });
+    else if (/صور/.test(text)) addMsg(rid, { from: 's', shopId: sid, text: 'أكيد، هذي صورة ثانية.', img: o.img || IMG.engine });
     else if (/وين|موقع|مكان/.test(text)) addMsg(rid, { from: 's', shopId: sid, text: 'المحل في صناعية المعبيلة. لما تحجز يطلع لك الموقع.' });
     else addMsg(rid, { from: 's', shopId: sid, text: r.status === 'open' ? 'حياك، القطعة جاهزة. تبيني أحجزها لك؟' : 'حياك، المحل مفتوح لين 10 الليل.' });
     S._scroll = true; render();
