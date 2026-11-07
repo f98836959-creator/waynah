@@ -1155,7 +1155,7 @@ function toast(t) {
 }
 
 /* ---------------- mascot + stage ---------------- */
-var lastKey = '', enterT = null, lastChat = 0;
+var lastKey = '', enterT = null, lastChat = 0, PICK = {};
 var LINES = ['هلا! وش تدوّر عليه؟', 'أنا أعرف وين كل قطعة في المعبيلة.', 'لا تلف على المحلات، خلّهم يجونك.', 'جرّب تكتب «بطارية».', 'اضغطني مرة ثانية 😄', 'السعر يجيك قبل لا تطلع من البيت.'];
 function mascotInner(alt) {
   return '<span class="rays"></span><span class="disc"></span><span class="pulse"></span><span class="pulse"></span><span class="pulse"></span>' +
@@ -1262,14 +1262,22 @@ function render() {
   root.innerHTML = html;
   if (key !== lastKey) { lastKey = key; root.classList.remove('enter'); void root.offsetWidth; root.classList.add('enter'); clearTimeout(enterT); enterT = setTimeout(function () { root.classList.remove('enter'); }, 1100); window.scrollTo({ top: 0 }); }
   var pm = document.getElementById('pickmap');
-  if (pm && window.maplibregl && !pm._map) {
-    try {
-      var pmap = new maplibregl.Map({ container: pm, attributionControl: false, center: S.s.reg.loc ? [S.s.reg.loc[1], S.s.reg.loc[0]] : [AREA.lng, AREA.lat], zoom: 15.3, style: { version: 8, sources: { sat: { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 19 } }, layers: [{ id: 'sat', type: 'raster', source: 'sat' }] } });
-      pm._map = pmap;
-      var pkEl = function () { var e = document.createElement('div'); e.className = 'pin on show'; e.innerHTML = '<span class="in"><span class="ring"></span><span class="dot"></span><span class="lbl">محلك</span></span>'; return e; };
-      var pk = S.s.reg.loc ? new maplibregl.Marker({ element: pkEl(), anchor: 'center' }).setLngLat([S.s.reg.loc[1], S.s.reg.loc[0]]).addTo(pmap) : null;
-      pmap.on('click', function (e) { S.s.reg.loc = [e.lngLat.lat, e.lngLat.lng]; if (pk) pk.setLngLat(e.lngLat); else pk = new maplibregl.Marker({ element: pkEl(), anchor: 'center' }).setLngLat(e.lngLat).addTo(pmap); var lb = pm.previousElementSibling.querySelector('.xs'); if (lb) lb.textContent = 'حددت الموقع ✓'; });
-    } catch (e) {}
+  if (pm && window.maplibregl) {
+    // one persistent map, moved into each fresh render (re-creating it would leak WebGL contexts)
+    if (!PICK.el) {
+      try {
+        PICK.el = document.createElement('div'); PICK.el.style.cssText = 'position:absolute;inset:0';
+        pm.appendChild(PICK.el);
+        var pmap = PICK.map = new maplibregl.Map({ container: PICK.el, attributionControl: false, center: [AREA.lng, AREA.lat], zoom: 15.3, style: { version: 8, sources: { sat: { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 19 } }, layers: [{ id: 'sat', type: 'raster', source: 'sat' }] } });
+        var pkEl = function () { var e = document.createElement('div'); e.className = 'pin on show'; e.innerHTML = '<span class="in"><span class="ring"></span><span class="dot"></span><span class="lbl">محلك</span></span>'; return e; };
+        pmap.on('click', function (e) {
+          S.s.reg.loc = [e.lngLat.lat, e.lngLat.lng];
+          if (PICK.mk) PICK.mk.setLngLat(e.lngLat); else PICK.mk = new maplibregl.Marker({ element: pkEl(), anchor: 'center' }).setLngLat(e.lngLat).addTo(pmap);
+          var host = PICK.el.parentNode, lb = host && host.previousElementSibling && host.previousElementSibling.querySelector('.xs'); if (lb) lb.textContent = 'حددت الموقع ✓';
+        });
+      } catch (e) { PICK.el = null; }
+    } else if (PICK.el.parentNode !== pm) { pm.appendChild(PICK.el); PICK.map.resize(); }
+    if (!S.s.reg.loc && PICK.mk) { PICK.mk.remove(); PICK.mk = null; }
   }
   var ch = $('.chat');
   if (ch) { var n = ch.children.length; if (n > lastChat && lastChat > 0 && ch.lastElementChild) ch.lastElementChild.classList.add('fresh'); lastChat = n; } else lastChat = 0;
@@ -1477,7 +1485,7 @@ var Shop = {
     return '<div class="row">' + backBtn('s-intro') + '<h1 class="grow" style="font-size:22px">عرّفنا على محلك</h1><span class="xs muted">1 من 2</span></div>' +
       '<div class="card stack"><div><label class="label" for="s-name">اسم المحل</label><input id="s-name" class="input" type="text" placeholder="الاسم اللي على اللوحة" value="' + esc(r.name) + '" data-bind="s.reg.name"></div>' +
       '<div><span class="label">نوع النشاط</span>' + chips(['قطع غيار', 'كراج / ورشة', 'إطارات وبطاريات'], r.type, 's-type') + '</div>' +
-      '<div><span class="label">موقع المحل</span><div class="soft small row" style="justify-content:space-between"><b>صناعية المعبيلة</b><span class="muted xs">' + (r.loc ? 'حددت الموقع ✓' : 'اضغط على الخريطة') + '</span></div><div id="pickmap" style="height:200px;border-radius:14px;margin-top:8px;overflow:hidden;background:#0E1A3A"></div></div>' +
+      '<div><span class="label">موقع المحل</span><div class="soft small row" style="justify-content:space-between"><b>صناعية المعبيلة</b><span class="muted xs">' + (r.loc ? 'حددت الموقع ✓' : 'اضغط على الخريطة') + '</span></div><div id="pickmap" style="position:relative;height:200px;border-radius:14px;margin-top:8px;overflow:hidden;background:#0E1A3A"></div></div>' +
       '<div><span class="label">الأقسام اللي تبيعها</span>' + chips(['إطارات', 'بطاريات', 'زيوت', 'فلاتر', 'فحمات', 'قطع محرك', 'قطع بودي', 'كهرباء', 'مكيف'], r.cats, 's-cat', true) + '</div>' +
       '<div><span class="label">السيارات اللي تخدمها</span>' + chips(['كل السيارات'].concat(CARS.map(function (c) { return c.ar; })), r.brands, 's-brand', true) + '</div></div>' +
       (S.s.err ? '<p class="err" role="alert">' + esc(S.s.err) + '</p>' : '') +
