@@ -713,6 +713,7 @@ var MapCtl = {
     clearTimeout(this.fxT[cls]); this.fxT[cls] = setTimeout(function () { f.classList.remove(cls); }, ms || 1700);
   },
   lap: function () { return window.innerWidth >= 960; },
+  shopBounds: function () { var pts = allShops().map(function (s) { return [s.lat, s.lng]; }); return (pts.length > 1 ? L.latLngBounds(pts) : L.latLngBounds([[AREA.lat - .008, AREA.lng - .01], [AREA.lat + .008, AREA.lng + .01]])).pad(.12); },
   aim: function (lat, lng, zoom) {
     var sz = this.map.getSize(), off = this.lap() ? [-244, 0] : [0, Math.round(sz.y * 0.27)];
     return this.map.unproject(this.map.project([lat, lng], zoom).add(off), zoom);
@@ -721,7 +722,8 @@ var MapCtl = {
   gta: function (lat, lng, zoom, dur, cb) {
     var self = this, el = document.getElementById('map');
     this.fx('flash', 800); this.fx('rush', 1700); el.classList.add('rush');
-    this.map.flyTo(this.aim(lat, lng, zoom), zoom, { duration: dur, easeLinearity: 0.15 });
+    if (lat && lat.getSouthWest) this.map.flyToBounds(lat, Object.assign({ duration: dur, easeLinearity: 0.15 }, this.pad()));
+    else this.map.flyTo(this.aim(lat, lng, zoom), zoom, { duration: dur, easeLinearity: 0.15 });
     this.map.once('moveend', function () { el.classList.remove('rush'); self.fx('flash', 700); if (cb) cb(); });
   },
   startDrift: function () { var self = this; this.stopDrift(); this.drift = setInterval(function () { if (self.stage === 'welcome') self.map.panBy([0.6, -0.25], { animate: false }); }, 50); },
@@ -783,7 +785,7 @@ var MapCtl = {
     var prev = this.stage; this.stage = st;
     if (st === 'welcome') { this.stopDrift(); this.showShops(false); this.showAreas(false); this.beam(null); if (this.route) { map.removeLayer(this.route); this.route = null; } document.getElementById('map').classList.remove('dim'); this.fx('hatched', 1); map.flyTo(this.aim(22.9, 57.9, 6.6), 6.6, { duration: prev ? 1.8 : 0 }); this.startDrift(); }
     if (st === 'area') { this.stopDrift(); this.showShops(false); this.beam(null); this.gta(23.62, 58.25, 10.2, 2.2, function () { self.showAreas(true); }); }
-    if (st === 'dive') { this.showAreas(false); this.gta(AREA.lat, AREA.lng, AREA.zoom, 2.6, function () { self.showShops(true); self.showMe(false); if (self.cat) setTimeout(function () { self.hatch(self.cat); }, 400); }); }
+    if (st === 'dive') { this.showAreas(false); this.gta(this.shopBounds(), null, null, 2.6, function () { self.showShops(true); self.showMe(false); if (self.cat) setTimeout(function () { self.hatch(self.cat); }, 400); }); }
     if (st === 'offers') { this.showShops(true); this.showMe(true); map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], [AREA.lat, AREA.lng]]).pad(.15), Object.assign({ duration: 1.6 }, this.pad())); var ids = (arg || []).map(function (s) { return s.id; }); setTimeout(function () { self.beam(ids); }, 1200); }
     if (st === 'focus') { var m = this.shops[arg]; this.beam(null); if (m) map.flyTo(this.aim(m.getLatLng().lat, m.getLatLng().lng, 17), 17, { duration: 1.4 }); }
     if (st === 'route') { this.showMe(true); this.beam(null); this.drawRoute(arg); var mm = this.shops[arg]; if (mm) map.flyToBounds(L.latLngBounds([[ME_POS.lat, ME_POS.lng], mm.getLatLng()]).pad(.2), Object.assign({ duration: 1.6 }, this.pad())); }
