@@ -367,9 +367,10 @@ body.mapmode .maplibregl-ctrl-bottom-left{bottom:calc(44vh + 4px)}
 body[data-tod="day"] .tint{opacity:.3}body[data-tod="golden"] .tint{opacity:.5}
 .tint{transition:opacity 2s}
 .tod{position:fixed;inset:0;z-index:1;pointer-events:none;background:var(--tint,transparent);mix-blend-mode:soft-light;transition:background 2s}
-.stars{position:fixed;inset:0 0 50% 0;z-index:2;pointer-events:none;opacity:0;transition:opacity 2s;background-image:radial-gradient(1px 1px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 33% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 58% 22%,#fff,transparent),radial-gradient(1px 1px at 72% 12%,#fff,transparent),radial-gradient(1.2px 1.2px at 86% 26%,#fff,transparent),radial-gradient(1px 1px at 22% 34%,#fff,transparent),radial-gradient(1px 1px at 45% 30%,#fff,transparent),radial-gradient(1.3px 1.3px at 92% 6%,#fff,transparent),radial-gradient(1px 1px at 6% 6%,#fff,transparent),radial-gradient(1px 1px at 65% 38%,#fff,transparent);-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent);animation:twinkle 6s ease-in-out infinite alternate}
+.skystars{position:fixed;inset:0 0 50% 0;z-index:2;pointer-events:none;opacity:0;transition:opacity 2s;background-image:radial-gradient(1px 1px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 33% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 58% 22%,#fff,transparent),radial-gradient(1px 1px at 72% 12%,#fff,transparent),radial-gradient(1.2px 1.2px at 86% 26%,#fff,transparent),radial-gradient(1px 1px at 22% 34%,#fff,transparent),radial-gradient(1px 1px at 45% 30%,#fff,transparent),radial-gradient(1.3px 1.3px at 92% 6%,#fff,transparent),radial-gradient(1px 1px at 6% 6%,#fff,transparent),radial-gradient(1px 1px at 65% 38%,#fff,transparent);-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent);animation:twinkle 6s ease-in-out infinite alternate}
 @keyframes twinkle{to{filter:brightness(.6)}}
-body[data-tod="night"] .stars.on,body[data-tod="blue"] .stars.on{opacity:.8}
+body[data-tod="night"] .skystars.on,body[data-tod="blue"] .skystars.on{opacity:.8}
+body:not(.mapmode) .skystars{display:none}
 .tint{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,transparent 35%,rgba(6,11,24,.55) 100%),linear-gradient(180deg,rgba(6,11,24,.55),transparent 30%,transparent 60%,rgba(6,11,24,.75))}
 /* sky render: cloud shadows on the ground, two cloud decks, sun, haze, grain */
 .clouds{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 2.4s}
@@ -541,7 +542,7 @@ body.mapmode .pill.p-info{background:rgba(255,255,255,.12);color:#F4EEE3}
 </head>
 <body>
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
-<div id="map" aria-hidden="true"></div><div class="tod" aria-hidden="true"></div><div class="stars" id="stars" aria-hidden="true"></div><div class="tint" aria-hidden="true"></div><div class="clouds" id="clouds" aria-hidden="true"><i class="sh"></i><i class="cu2"></i><i class="cu"></i><i class="ci"></i></div><div class="sky" id="sky" aria-hidden="true"><div class="haze"></div><div class="rays"></div><div class="sun"></div></div><div class="grain" aria-hidden="true"></div>
+<div id="map" aria-hidden="true"></div><div class="tod" aria-hidden="true"></div><div class="skystars" id="stars" aria-hidden="true"></div><div class="tint" aria-hidden="true"></div><div class="clouds" id="clouds" aria-hidden="true"><i class="sh"></i><i class="cu2"></i><i class="cu"></i><i class="ci"></i></div><div class="sky" id="sky" aria-hidden="true"><div class="haze"></div><div class="rays"></div><div class="sun"></div></div><div class="grain" aria-hidden="true"></div>
 <div id="fx" aria-hidden="true"><div class="hatch"></div><div class="rays"></div><div class="scan"></div><div class="vig"></div><div class="flash"></div></div>
 <header class="topbar">
   <a class="brand" href="#driver" aria-label="وينه"><img src="img/head.webp" alt=""><b>وينه</b></a>
@@ -813,7 +814,7 @@ var MapCtl = window.__mapctl = {
     map.once('load', function () { var at = el.querySelector('.maplibregl-ctrl-attrib'); if (at) at.classList.remove('maplibregl-compact-show'); });
     map.on('error', function (e) { try { console.warn('[map]', e && e.error && e.error.message); } catch (x) {} });
     this.map = map; this.ok = true;
-    map.on('load', function () { self.applyTod(true); self.startDash(); });
+    map.on('load', function () { self.ready = true; self.applyTod(true); self.startDash(); (self.pending || []).forEach(function (f) { f(); }); self.pending = []; });
     setInterval(function () { self.applyTod(false); }, 60000);
     this.areas = AREAS.map(function (a) {
       var e = document.createElement('div'); e.className = 'apin' + (a.live ? '' : ' soon'); e.innerHTML = '<span class="halo"></span><b>' + esc(a.name) + '</b>';
@@ -829,7 +830,7 @@ var MapCtl = window.__mapctl = {
     root.setProperty('--cb', t.cb.toFixed(2)); root.setProperty('--cw', t.cw.toFixed(2)); root.setProperty('--cop', t.cop.toFixed(2));
     root.setProperty('--sun-x', (t.az > 180 ? 8 : 92) + '%');
     document.body.dataset.tod = t.name;
-    if (!m || !m.isStyleLoaded()) return;
+    if (!m || !this.ready) return;
     ['sat', 'satlo'].forEach(function (L) { m.setPaintProperty(L, 'raster-brightness-max', t.br); m.setPaintProperty(L, 'raster-saturation', t.sa); m.setPaintProperty(L, 'raster-contrast', t.co); });
     m.setPaintProperty('bg', 'background-color', mixHex('#05080f', '#3a3328', Math.max(0, Math.min(1, t.br))));
     m.setPaintProperty('sat', 'raster-saturation', t.sa);
@@ -911,19 +912,21 @@ var MapCtl = window.__mapctl = {
     var self = this, offers = (r && r.offers) || {};
     Object.keys(this.shops).forEach(function (id) {
       var e = self.shops[id].getElement(), o = offers[id];
-      e.classList.toggle('priced', !!o); e.classList.toggle('chosen', !!(r && r.chosen === id));
+      var ch = !!(r && r.chosen), me = ch && r.chosen === id;
+      e.classList.toggle('priced', !!o && (!ch || me)); e.classList.toggle('chosen', me); e.classList.toggle('dimmed', ch && !me);
       if (o) e.querySelector('.tag').textContent = fmt(o.price) + ' ر.ع';
     });
   },
   setLine: function (id, coords, color, width, dashed) {
-    var m = this.map; if (!m.isStyleLoaded()) return;
+    var m = this.map, self = this;
+    if (!this.ready) { (this.pending = this.pending || []).push(function () { self.setLine(id, coords, color, width, dashed); }); return; }
     var data = { type: 'FeatureCollection', features: coords.map(function (c) { return { type: 'Feature', geometry: { type: 'LineString', coordinates: c } }; }) };
     if (m.getSource(id)) { m.getSource(id).setData(data); return; }
     m.addSource(id, { type: 'geojson', data: data, lineMetrics: true });
     m.addLayer({ id: id + '-glow', type: 'line', source: id, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': color, 'line-width': width * 3, 'line-blur': width * 2, 'line-opacity': .3 } });
     m.addLayer({ id: id, type: 'line', source: id, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': color, 'line-width': width, 'line-opacity': .95, 'line-dasharray': dashed ? [0, 2, 2] : [1, 0] } });
   },
-  clearLine: function (id) { var m = this.map; if (m.getSource(id)) m.getSource(id).setData({ type: 'FeatureCollection', features: [] }); },
+  clearLine: function (id) { var m = this.map; if (this.ready && m.getSource(id)) m.getSource(id).setData({ type: 'FeatureCollection', features: [] }); },
   startDash: function () {
     var self = this, seq = [[0, 4, 3], [.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, .5], [3, 4, 0], [0, .5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, .5]], i = 0;
     clearInterval(this.dashT);
