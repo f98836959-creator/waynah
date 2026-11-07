@@ -1138,10 +1138,13 @@ var OTP = {
   },
   send: function (phone) {
     var self = this;
+    if (!Store.inited) return Store.init().then(function () { return self.send(phone); });
     if (!Store.remote) { self.demo[phone] = true; return Promise.resolve({ ok: true, demo: true }); }
     return this.call({ action: 'send', phone: phone }).then(function (j) { self.demo[phone] = !!j.demo; return j; }).catch(function () { self.demo[phone] = true; return { ok: true, demo: true, offline: true }; });
   },
   verify: function (phone, code) {
+    var self = this;
+    if (!Store.inited) return Store.init().then(function () { return self.verify(phone, code); });
     if (this.demo[phone] || !Store.remote) return Promise.resolve({ ok: code === '0000' });
     return this.call({ action: 'verify', phone: phone, code: code }).catch(function () { return { ok: false, error: 'offline' }; });
   },
@@ -1149,20 +1152,24 @@ var OTP = {
 };
 var Store = {
   db: null, remote: false, mode: 'local',
+  inited: false, readyP: null,
   init: function () {
     var self = this;
-    return SUPA_P.then(function () {
+    if (this.readyP) return this.readyP;
+    return (this.readyP = SUPA_P.then(function () {
     if (Remote.init()) { self.remote = true; self.mode = 'shared'; return; }
     var p = (window.claude && typeof window.claude.use === 'function') ? window.claude.use('db').catch(function () { return null; }) : Promise.resolve(null);
     return Promise.race([p, sleep(6000).then(function () { return null; })]).then(function (db) { if (db) { self.db = db; self.mode = 'shared'; } });
-    });
+    }).then(function () { self.inited = true; }));
   },
+  // writes made before the backend is known wait for it, so nothing lands in the wrong store
+  wait: function (fn) { var self = this; return this.inited ? fn() : this.init().then(function () { return fn(); }); },
   watchDoc: function (p, cb) { if (this.remote) return Remote.watch('config', cb); if (this.db) return this.db.doc(p).onSnapshot(function (s) { cb(s.exists ? s.data() : null); }, function () { toast('انقطع الاتصال بالبيانات. حدّث الصفحة.'); }); return Local.watchDoc(p, cb); },
   watchCol: function (c, cb) { if (this.remote) return Remote.watch(c, cb); if (this.db) return this.db.collection(c).onSnapshot(function (q) { cb(q.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { toast('انقطع الاتصال بالبيانات. حدّث الصفحة.'); }); return Local.watchCol(c, cb); },
-  set: function (p, d) { if (this.remote) return Remote.set(p, d); if (this.db) return this.db.doc(p).set(d).catch(storeErr); Local.set(p, d); return Promise.resolve(); },
-  merge: function (p, d) { if (this.remote) return Remote.merge(p, d); if (this.db) return this.db.doc(p).update(d).catch(storeErr); Local.merge(p, d); return Promise.resolve(); },
-  del: function (p) { if (this.remote) return Remote.del(p); if (this.db) return this.db.doc(p).delete().catch(storeErr); Local.del(p); return Promise.resolve(); },
-  upload: function (dataUrl) { if (this.remote) return Remote.upload(dataUrl).catch(function () { toast('ما قدرنا نرفع الصورة. جرّب مرة ثانية.'); return null; }); return Promise.resolve(dataUrl); }
+  set: function (p, d) { var self = this; if (!this.inited) return this.wait(function () { return self.set(p, d); }); if (this.remote) return Remote.set(p, d); if (this.db) return this.db.doc(p).set(d).catch(storeErr); Local.set(p, d); return Promise.resolve(); },
+  merge: function (p, d) { var self = this; if (!this.inited) return this.wait(function () { return self.merge(p, d); }); if (this.remote) return Remote.merge(p, d); if (this.db) return this.db.doc(p).update(d).catch(storeErr); Local.merge(p, d); return Promise.resolve(); },
+  del: function (p) { var self = this; if (!this.inited) return this.wait(function () { return self.del(p); }); if (this.remote) return Remote.del(p); if (this.db) return this.db.doc(p).delete().catch(storeErr); Local.del(p); return Promise.resolve(); },
+  upload: function (dataUrl) { var self = this; if (!this.inited) return this.wait(function () { return self.upload(dataUrl); }); if (this.remote) return Remote.upload(dataUrl).catch(function () { toast('ما قدرنا نرفع الصورة. جرّب مرة ثانية.'); return null; }); return Promise.resolve(dataUrl); }
 };
 function storeErr(e) { try { console.error('[waynah] store error', e); } catch (x) {} var c = e && e.code; toast(c === 'quota_exceeded' ? 'امتلت قاعدة البيانات. امسح الطلبات القديمة من لوحة الفريق.' : 'ما انحفظ. جرّب مرة ثانية.'); }
 
