@@ -729,6 +729,12 @@ function t(s, v) { var o = s == null ? '' : String(s); if (LANG === 'en' && Obje
 var omr = function (v) { return t('{p} ر.ع', { p: fmt(v) }); };
 var SEP = function () { return LANG === 'en' ? ', ' : '، '; };
 var quote = function (x) { return LANG === 'en' ? '“' + x + '”' : '«' + x + '»'; };
+/* a part chosen from a category is saved as its Arabic name; show it in the viewer's language. Free text stays as typed */
+var partName = function (p) {
+  if (LANG === 'en') return t(p);
+  for (var i = 0; i < CATS.length; i++) if (EN[CATS[i].ar1] === p) return CATS[i].ar1; /* picked in English, shown in Arabic */
+  return p;
+};
 var carName = function (c) { return c ? t(c.brandAr) + ' ' + t(c.model) : ''; };
 var initial = function (n) { var x = t(n || '؟'); return (LANG === 'en' ? x.replace(/^Al[\s-]+/i, '') : x.replace(/^ال/, '')).charAt(0); };
 var msgText = function (x) { return t(x).split('[رقم مخفي]').join(t('[رقم مخفي]')); };
@@ -1890,7 +1896,7 @@ var Driver = {
         '<textarea id="d-note" class="textarea" rows="2" placeholder="' + esc(t('مثلاً: مع الإشارة، اللون أسود، رقم القطعة على الصورة')) + '" data-bind="d.note">' + esc(d.note) + '</textarea></div>' : '') +
       (d.err ? '<p class="err" role="alert">' + esc(t(d.err)) + '</p>' : '') +
       '<button class="btn btn-primary btn-lg btn-block" data-act="d-submit">' + (n ? t('أرسل الطلب لـ {n} محلات', { n: n }) : t('أرسل الطلب لمحلات المعبيلة')) + ' ' + ICON.send + '</button>' +
-      (mine.length ? '<h2 style="font-size:15px;margin-top:4px">' + t('طلباتي') + '</h2>' + mine.map(function (r) { var k = offersOf(r).length; return '<button class="li" data-act="d-open" data-id="' + r.id + '"><span class="grow"><b style="display:block">' + esc(r.part) + '</b><span class="xs muted">' + ago(r.createdAt) + ' · ' + t(k === 1 ? 'عرض واحد' : '{n} عرض', { n: k }) + '</span></span>' + statusPill(r) + '</button>'; }).join('') : '');
+      (mine.length ? '<h2 style="font-size:15px;margin-top:4px">' + t('طلباتي') + '</h2>' + mine.map(function (r) { var k = offersOf(r).length; return '<button class="li" data-act="d-open" data-id="' + r.id + '"><span class="grow"><b style="display:block">' + esc(partName(r.part)) + '</b><span class="xs muted">' + ago(r.createdAt) + ' · ' + t(k === 1 ? 'عرض واحد' : '{n} عرض', { n: k }) + '</span></span>' + statusPill(r) + '</button>'; }).join('') : '');
   },
   login: function () {
     var d = S.d;
@@ -1918,9 +1924,9 @@ var Driver = {
     var minP = offs.length ? Math.min.apply(null, offs.map(function (o) { return o.price; })) : 0;
     var waiting = r.status === 'open';
     var tags = (r.tags || []).concat(r.note ? [r.note] : []);
-    return this.steps(2) + '<div class="row">' + backBtn('d-home') + '<div class="grow"><h1 style="font-size:19px">' + t('عروض المحلات') + '</h1><div class="small muted">' + esc(r.part + ' · ' + t(r.car.model) + ' ' + r.car.year) + '</div></div>' + statusPill(r) + '</div>' +
+    return this.steps(2) + '<div class="row">' + backBtn('d-home') + '<div class="grow"><h1 style="font-size:19px">' + t('عروض المحلات') + '</h1><div class="small muted">' + esc(partName(r.part) + ' · ' + t(r.car.model) + ' ' + r.car.year) + '</div></div>' + statusPill(r) + '</div>' +
       '<div class="hero"><div class="grow"><div class="t">' + (offs.length ? t(offs.length === 1 ? 'وصلتك {n} عرض' : 'وصلتك {n} عروض', { n: offs.length }) : t('أرسلت طلبك لمحلات المعبيلة')) + '</div><p>' + t(offs.length ? 'قارن السعر والحالة، واختار.' : 'المحلات قاعدة تشوف طلبك…') + '</p></div></div>' +
-      '<div class="card row" style="padding:10px 12px">' + (r.photo ? '<img class="photo" style="width:52px;height:52px" src="' + r.photo + '" alt="">' : '<span class="thumb" style="width:52px;height:52px;color:var(--accent)">' + ICON.q + '</span>') + '<div class="grow"><div class="xs muted">' + t('طلبك') + '</div><b class="small">' + esc(r.part) + '</b><div class="xs muted">' + esc(tags.map(function (x) { return t(x); }).join(' · ') || t('بدون ملاحظات')) + '</div></div></div>' +
+      '<div class="card row" style="padding:10px 12px">' + (r.photo ? '<img class="photo" style="width:52px;height:52px" src="' + r.photo + '" alt="">' : '<span class="thumb" style="width:52px;height:52px;color:var(--accent)">' + ICON.q + '</span>') + '<div class="grow"><div class="xs muted">' + t('طلبك') + '</div><b class="small">' + esc(partName(r.part)) + '</b><div class="xs muted">' + esc(tags.map(function (x) { return t(x); }).join(' · ') || t('بدون ملاحظات')) + '</div></div></div>' +
       (offs.length > 1 ? chips(['الأرخص', 'الأقرب', 'الأعلى تقييم'], { cheap: 'الأرخص', near: 'الأقرب', rate: 'الأعلى تقييم' }[d.sort], 'd-sort') : '') +
       offs.map(function (o, i) {
         var thumb = o.img ? '<img class="' + (o.img.indexOf('data:') === 0 ? 'cover' : '') + '" src="' + esc(o.img) + '" alt="' + t('صورة من المحل') + '">' : esc(initial(o.shopName));
@@ -1942,7 +1948,7 @@ var Driver = {
     var lastOffer = null; ms.forEach(function (m) { if (m.kind === 'offer') lastOffer = m; });
     var bookedHere = r.chosen === sid && r.status !== 'open';
     var bubbles = '<div class="b sys">' + t('المحادثة داخل وينه. رقمك ما يطلع للمحل.') + '</div>' +
-      '<div class="b me">' + esc(t('السلام عليكم، أبي {p} حق {c}', { p: r.part, c: carName(r.car) + ' ' + r.car.year }) + ((r.tags || []).length || r.note ? ' (' + (r.tags || []).map(function (x) { return t(x); }).concat(r.note ? [r.note] : []).join(SEP()) + ')' : '')) + (r.photo ? '<img src="' + r.photo + '" alt="' + t('صورتك') + '">' : '') + '</div>' +
+      '<div class="b me">' + esc(t('السلام عليكم، أبي {p} حق {c}', { p: partName(r.part), c: carName(r.car) + ' ' + r.car.year }) + ((r.tags || []).length || r.note ? ' (' + (r.tags || []).map(function (x) { return t(x); }).concat(r.note ? [r.note] : []).join(SEP()) + ')' : '')) + (r.photo ? '<img src="' + r.photo + '" alt="' + t('صورتك') + '">' : '') + '</div>' +
       '<div class="ocard"><div class="row xs" style="justify-content:space-between"><b style="color:var(--accent)">' + t('عرض سعر') + '</b><span class="muted">' + t('ثابت 7 أيام') + '</span></div><div class="price num" style="font-size:24px;font-weight:700">' + omr(offer.price) + '</div><div class="xs muted">' + esc(t(offer.cond || '') + ' · ' + t(offer.avail || '')) + '</div>' + (offer.note ? '<div class="small">' + quote(esc(t(offer.note))) + '</div>' : '') + (!lastOffer && !bookedHere ? '<button class="btn btn-primary btn-sm btn-block" style="margin-top:8px" data-act="d-book" data-price="' + offer.price + '">' + t('احجز بهذا السعر') + '</button>' : '') + '</div>' +
       ms.map(function (m) {
         if (m.kind === 'offer') return '<div class="ocard"><div class="row xs" style="justify-content:space-between"><b style="color:var(--accent)">' + t('سعر جديد') + '</b><span class="muted">' + ago(m.at) + '</span></div><div class="num" style="font-size:24px;font-weight:700">' + omr(m.price) + '</div>' + (m === lastOffer && !bookedHere ? '<button class="btn btn-primary btn-sm btn-block" style="margin-top:8px" data-act="d-book" data-price="' + m.price + '">' + t('احجز بهذا السعر') + '</button>' : '') + '</div>';
@@ -1964,7 +1970,7 @@ var Driver = {
     return this.steps(3) + '<div class="row">' + backBtn('d-chat') + '<h1 class="grow" style="font-size:22px">' + t('قطعتك محجوزة') + '</h1></div>' +
       '<div class="soft small row" style="gap:8px">🏁 <span class="grow">' + t('الطريق مرسوم لك على الخريطة. اضغط «وديني للمحل» يفتح لك قوقل ماب.') + '</span></div>' +
       '<div class="card stack" style="gap:8px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><b>' + esc(t(shop.name || offer.shopName)) + '</b><div class="xs muted">' + t('صناعية المعبيلة · مفتوح لين 10 الليل') + '</div></div><div style="text-align:end"><div class="xs muted">' + t('رقم الحجز') + '</div><div class="num" style="font-weight:700;font-size:20px;color:var(--accent);direction:ltr">W-' + esc(r.code) + '</div></div></div>' +
-      '<div class="row" style="justify-content:space-between;border-top:1px solid var(--surface2);padding-top:8px"><span class="muted small">' + esc(r.part) + '</span><b class="num">' + omr(r.finalPrice) + '</b></div><div class="xs muted">' + t('الدفع في المحل. أعط المحل رقم الحجز لما توصل.') + '</div></div>' +
+      '<div class="row" style="justify-content:space-between;border-top:1px solid var(--surface2);padding-top:8px"><span class="muted small">' + esc(partName(r.part)) + '</span><b class="num">' + omr(r.finalPrice) + '</b></div><div class="xs muted">' + t('الدفع في المحل. أعط المحل رقم الحجز لما توصل.') + '</div></div>' +
       '<a class="btn btn-primary btn-lg btn-block" href="' + mapsTo(shop) + '" target="_blank" rel="noopener">' + t('وديني للمحل') + '</a>' +
       '<div class="track">' + track + '</div>' +
       (!arrived ? '<button class="btn btn-lg btn-block" style="border:2px solid var(--accent);color:var(--accent)" data-act="d-arrived">' + t('وصلت المحل') + '</button>' : '') +
@@ -2080,7 +2086,7 @@ var Shop = {
         var my = (r.offers || {})[shop.id];
         var unread = msgsOf(r, shop.id).filter(function (m) { return m.from === 'c'; }).length;
         return '<button class="li" style="min-height:76px;padding:10px 12px" data-act="s-open" data-id="' + r.id + '">' + (r.photo ? '<img class="photo" style="width:56px;height:56px" src="' + r.photo + '" alt="">' : '<span class="thumb" style="width:56px;height:56px;color:var(--accent)">' + ICON.q + '</span>') +
-          '<span class="grow"><b style="display:block">' + esc(r.part) + '</b><span class="xs muted" style="display:block">' + esc(carName(r.car) + ' ' + r.car.year) + '</span><span class="xs muted">' + ago(r.createdAt) + (my ? ' · ' + t('عرضك {p}', { p: omr(my.price) }) : '') + (unread ? ' · ' + t('{n} رسالة', { n: unread }) : '') + '</span></span>' +
+          '<span class="grow"><b style="display:block">' + esc(partName(r.part)) + '</b><span class="xs muted" style="display:block">' + esc(carName(r.car) + ' ' + r.car.year) + '</span><span class="xs muted">' + ago(r.createdAt) + (my ? ' · ' + t('عرضك {p}', { p: omr(my.price) }) : '') + (unread ? ' · ' + t('{n} رسالة', { n: unread }) : '') + '</span></span>' +
           (r.chosen === shop.id ? statusPill(r) : my ? '<span class="pill p-info">' + t('رديت') + '</span>' : '<span class="pill p-bad">' + t('جديد') + '</span>') + '</button>';
       }).join('') : '<div class="empty"><img src="' + IMG.mascot + '" alt=""><div>' + t(s.tab === 'new' ? 'ما في طلبات جديدة الحين. أول ما يطلب أحد، يطلع هنا.' : s.tab === 'book' ? 'ما في حجوزات للحين.' : 'ما رديت على طلبات للحين.') + '</div><div class="xs" style="margin-top:6px">' + t('جرّب: افتح «السائق» فوق وأرسل طلب.') + '</div></div>') +
       '<button class="btn btn-sm" data-act="s-logout" style="align-self:center">' + t('سجّل خروج من المحل') + '</button>';
@@ -2093,7 +2099,7 @@ var Shop = {
     var o = s.offer;
     return '<div class="row">' + backBtn('s-dash') + '<h1 class="grow" style="font-size:20px">' + t('رد على الطلب') + '</h1></div>' +
       '<div class="card stack" style="gap:8px">' + (r.photo ? '<img src="' + r.photo + '" alt="' + t('صورة القطعة من الزبون') + '" style="width:100%;max-height:240px;object-fit:contain;border-radius:12px;background:var(--surface2)">' : '<div class="soft small muted" style="text-align:center">' + t('الزبون ما أرفق صورة') + '</div>') +
-      '<h2 style="font-size:18px">' + esc(r.part) + '</h2><div class="small muted">' + esc(carName(r.car) + ' ' + r.car.year) + ' · ' + ago(r.createdAt) + '</div>' +
+      '<h2 style="font-size:18px">' + esc(partName(r.part)) + '</h2><div class="small muted">' + esc(carName(r.car) + ' ' + r.car.year) + ' · ' + ago(r.createdAt) + '</div>' +
       ((r.tags || []).length || r.note ? '<div class="soft small">' + quote(esc((r.tags || []).map(function (x) { return t(x); }).concat(r.note ? [r.note] : []).join(SEP()))) + '</div>' : '') + '</div>' +
       '<h2 style="font-size:16px">' + t('عرضك للزبون') + '</h2>' + chips(['أصلي جديد', 'أصلي مستعمل', 'تجاري'], o.cond, 's-cond') + chips(['موجودة الحين', 'توصل بكرة', 'توصل خلال أسبوع'], o.avail, 's-avail') +
       '<div><label class="label" for="s-price">' + t('السعر (ر.ع)') + '</label><input id="s-price" class="input ltr" style="font-size:20px" inputmode="decimal" placeholder="' + t('مثلاً 38') + '" value="' + esc(o.price) + '" data-bind="s.offer.price" data-dec="1"></div>' +
@@ -2105,12 +2111,12 @@ var Shop = {
   chat: function () {
     var s = S.s, shop = this.me(), r = reqById(s.rid); if (!r || !shop) return backBtn('s-dash');
     var my = (r.offers || {})[shop.id] || {}, ms = msgsOf(r, shop.id), mine = r.chosen === shop.id;
-    var head = '<div class="row">' + backBtn('s-dash') + '<div class="grow"><b>' + t('زبون') + ' · ' + esc(carName(r.car) + ' ' + r.car.year) + '</b><div class="xs muted">' + esc(r.part) + '</div></div>' + (mine ? statusPill(r) : r.status === 'open' ? '<span class="pill p-info">' + t('ينتظر قراره') + '</span>' : '<span class="pill p-mute">' + t('اختار غيرك') + '</span>') + '</div>';
+    var head = '<div class="row">' + backBtn('s-dash') + '<div class="grow"><b>' + t('زبون') + ' · ' + esc(carName(r.car) + ' ' + r.car.year) + '</b><div class="xs muted">' + esc(partName(r.part)) + '</div></div>' + (mine ? statusPill(r) : r.status === 'open' ? '<span class="pill p-info">' + t('ينتظر قراره') + '</span>' : '<span class="pill p-mute">' + t('اختار غيرك') + '</span>') + '</div>';
     var handover = '';
     if (mine && (r.status === 'booked' || r.status === 'arrived')) handover = '<div class="card stack" style="gap:8px;border:2px solid var(--accent)"><b>' + t('حجز مؤكد · {p}', { p: omr(r.finalPrice) }) + '</b>' + (r.status === 'arrived' ? '<div class="pill p-acc" style="align-self:flex-start">' + t('الزبون يقول إنه وصل المحل') + '</div>' : '') +
       '<label class="label" for="s-pickup" style="margin:0">' + t('لما يوصل الزبون، اكتب رقم حجزه') + '</label><div class="row"><input id="s-pickup" class="input ltr grow" style="text-align:center;font-size:20px;letter-spacing:.3em" inputmode="numeric" maxlength="4" placeholder="' + t('4 أرقام') + '" value="' + esc(s.pickup) + '" data-bind="s.pickup" data-digits="4"><button class="btn btn-primary" data-act="s-handover">' + t('تم التسليم') + '</button></div>' + (s.err ? '<p class="err" role="alert">' + esc(t(s.err)) + '</p>' : '') + '</div>';
     if (mine && r.status === 'done') handover = '<div class="soft small"><b style="color:var(--good)">' + t('تم التسليم.') + '</b> ' + (r.review ? t('الزبون قيّمك {n} من 5', { n: r.review.stars }) + (r.review.comment ? ': ' + quote(esc(r.review.comment)) : '') : t('وصل للزبون طلب التقييم.')) + '</div>';
-    var bubbles = '<div class="b them">' + esc(t('السلام عليكم، أبي {p} حق {c}', { p: r.part, c: carName(r.car) + ' ' + r.car.year })) + (r.photo ? '<img src="' + r.photo + '" alt="">' : '') + '</div>' +
+    var bubbles = '<div class="b them">' + esc(t('السلام عليكم، أبي {p} حق {c}', { p: partName(r.part), c: carName(r.car) + ' ' + r.car.year })) + (r.photo ? '<img src="' + r.photo + '" alt="">' : '') + '</div>' +
       '<div class="ocard" style="align-self:flex-start"><b class="xs" style="color:var(--accent)">' + t('عرضك') + '</b><div class="num" style="font-size:22px;font-weight:700">' + omr(my.price) + '</div><div class="xs muted">' + esc(t(my.cond || '') + ' · ' + t(my.avail || '')) + '</div></div>' +
       ms.map(function (m) {
         if (m.kind === 'offer') return '<div class="ocard" style="align-self:flex-start"><b class="xs" style="color:var(--accent)">' + t('سعر جديد منك') + '</b><div class="num" style="font-size:22px;font-weight:700">' + omr(m.price) + '</div></div>';
@@ -2166,10 +2172,10 @@ var Admin = {
     var catArr = Object.keys(cats).map(function (k) { return [k, cats[k]]; }).sort(function (a, b) { return b[1] - a[1]; }), cmax = catArr.length ? catArr[0][1] : 1;
     var feed = [];
     R.forEach(function (r) {
-      feed.push([r.createdAt, t('طلب'), 'p-info', r.part + ' · ' + carName(r.car)]);
-      offersOf(r).forEach(function (o) { feed.push([o.at, t('عرض'), 'p-acc', t('{s} رد بـ {p} على {x}', { s: t(o.shopName), p: omr(o.price), x: r.part })]); });
+      feed.push([r.createdAt, t('طلب'), 'p-info', partName(r.part) + ' · ' + carName(r.car)]);
+      offersOf(r).forEach(function (o) { feed.push([o.at, t('عرض'), 'p-acc', t('{s} رد بـ {p} على {x}', { s: t(o.shopName), p: omr(o.price), x: partName(r.part) })]); });
       if (r.bookedAt) feed.push([r.bookedAt, t('حجز'), 'p-good', t('حجز عند {s}', { s: t((shopById(r.chosen) || {}).name || ((r.offers || {})[r.chosen] || {}).shopName || '') }) + ' · ' + omr(r.finalPrice)]);
-      if (r.handedAt) feed.push([r.handedAt, t('تسليم'), 'p-good', t('انسلمت {x}', { x: r.part })]);
+      if (r.handedAt) feed.push([r.handedAt, t('تسليم'), 'p-good', t('انسلمت {x}', { x: partName(r.part) })]);
     });
     D.shops.forEach(function (s) { feed.push([s.createdAt, t('محل جديد'), 'p-mute', s.name]); });
     feed.sort(function (a, b) { return b[0] - a[0]; });
@@ -2198,11 +2204,11 @@ var Admin = {
     var key = function (t) { return t.r.id + ':' + t.o.shopId; };
     var sel = threads.filter(function (t) { return key(t) === a.sel; })[0] || threads[0];
     var tx = t, L_FLAG = t('مبلّغ عنها تلقائياً'), L_BOOK = t('فيها حجز');
-    var list = threads.length ? threads.map(function (t) { var on = sel && key(t) === key(sel); return '<button class="li" style="flex-direction:column;align-items:stretch;padding:10px 12px;gap:2px;border-color:' + (on ? 'var(--accent)' : 'transparent') + '" data-act="a-sel" data-v="' + esc(key(t)) + '"><span class="row" style="justify-content:space-between"><b class="small">' + esc(tx(t.o.shopName)) + '</b><span class="xs muted">' + ago(t.last) + '</span></span><span class="xs muted">' + esc(t.r.part + ' · ' + tx(t.r.car.model) + ' ' + t.r.car.year) + '</span>' + (t.flagged ? '<span class="pill p-bad" style="align-self:flex-start">' + L_FLAG + '</span>' : t.r.chosen === t.o.shopId ? '<span class="pill p-good" style="align-self:flex-start">' + L_BOOK + '</span>' : '') + '</button>'; }).join('') : '<div class="empty small">' + t('ما في محادثات للحين.') + '</div>';
-    var detail = sel ? '<div class="row wrap" style="justify-content:space-between"><div><b>' + t('زبون') + ' W-' + esc(sel.r.code) + ' ↔ ' + esc(t(sel.o.shopName)) + '</b><div class="xs muted">' + esc(sel.r.part + ' · ' + carName(sel.r.car) + ' ' + sel.r.car.year) + '</div></div>' + statusPill(sel.r) + '</div>' +
+    var list = threads.length ? threads.map(function (t) { var on = sel && key(t) === key(sel); return '<button class="li" style="flex-direction:column;align-items:stretch;padding:10px 12px;gap:2px;border-color:' + (on ? 'var(--accent)' : 'transparent') + '" data-act="a-sel" data-v="' + esc(key(t)) + '"><span class="row" style="justify-content:space-between"><b class="small">' + esc(tx(t.o.shopName)) + '</b><span class="xs muted">' + ago(t.last) + '</span></span><span class="xs muted">' + esc(partName(t.r.part) + ' · ' + tx(t.r.car.model) + ' ' + t.r.car.year) + '</span>' + (t.flagged ? '<span class="pill p-bad" style="align-self:flex-start">' + L_FLAG + '</span>' : t.r.chosen === t.o.shopId ? '<span class="pill p-good" style="align-self:flex-start">' + L_BOOK + '</span>' : '') + '</button>'; }).join('') : '<div class="empty small">' + t('ما في محادثات للحين.') + '</div>';
+    var detail = sel ? '<div class="row wrap" style="justify-content:space-between"><div><b>' + t('زبون') + ' W-' + esc(sel.r.code) + ' ↔ ' + esc(t(sel.o.shopName)) + '</b><div class="xs muted">' + esc(partName(sel.r.part) + ' · ' + carName(sel.r.car) + ' ' + sel.r.car.year) + '</div></div>' + statusPill(sel.r) + '</div>' +
       (sel.flagged ? '<div class="flag"><b>' + t('تنبيه تلقائي:') + '</b> ' + t('في رسالة فيها رقم جوال أو محاولة تواصل خارج التطبيق. النظام خبّى الرقم.') + '</div>' : '') +
       '<div class="chat" style="min-height:0;background:var(--bg);border-radius:14px;padding:12px">' +
-      '<div class="b me">' + esc(t('طلب: {x}', { x: sel.r.part })) + '</div><div class="b sys">' + t('عرض {p}', { p: omr(sel.o.price) }) + ' · ' + esc(t(sel.o.cond)) + '</div>' +
+      '<div class="b me">' + esc(t('طلب: {x}', { x: partName(sel.r.part) })) + '</div><div class="b sys">' + t('عرض {p}', { p: omr(sel.o.price) }) + ' · ' + esc(t(sel.o.cond)) + '</div>' +
       sel.ms.map(function (m) { if (m.kind === 'offer') return '<div class="b sys">' + t('سعر جديد {p}', { p: omr(m.price) }) + '</div>'; if (m.kind === 'booking') return '<div class="b sys">' + t('تم الحجز · {p}', { p: omr(m.price != null ? m.price : sel.r.finalPrice) }) + '</div>'; return '<div class="b ' + (m.from === 'c' ? 'me' : 'them') + '">' + esc(msgText(m.text)) + '<span class="meta">' + t(m.from === 'c' ? 'الزبون' : 'المحل') + ' · ' + ago(m.at) + (m.flagged ? ' · ' + t('مبلّغ') : '') + '</span></div>'; }).join('') + '</div>' +
       '<p class="xs muted" style="margin:0">' + t('الأرقام مخفية. الفريق يفتح المحادثات للجودة وحل البلاغات فقط.') + '</p>' : '';
     return '<div class="two"><section class="card stack" style="flex:1 1 280px;gap:8px">' + list + '</section><section class="card stack" style="flex:999 1 420px">' + detail + '</section></div>';
