@@ -1191,27 +1191,60 @@ var Remote = {
     });
   }
 };
-/* real SMS codes through the Supabase 'sms' function; falls back to the in-page 0000 code (demo) */
-var OTP = {
-  demo: {},
-  e164: function (dial, local) { return '+' + dial + String(local || '').replace(/^0+/, ''); },
-  call: function (body) {
-    return fetch(SB_URL + '/functions/v1/sms', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY }, body: JSON.stringify(body) })
-      .then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); });
+/* sign-in by email (Supabase Auth): a one-time code goes to the inbox, so only its owner gets in.
+   Its own client keeps the session (the data client above stays anonymous). Local/demo mode: code 000000 */
+var Auth = {
+  c: null, uid: null, email: null, DEMO: '000000',
+  client: function () {
+    if (this.c) return this.c;
+    if (!Store.remote || !window.supabase) return null;
+    try { this.c = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'waynah.auth' } }); } catch (e) { return null; }
+    return this.c;
   },
-  send: function (phone) {
+  /* restores a saved session; resolves to the user id or null */
+  restore: function () {
     var self = this;
-    if (!Store.inited) return Store.init().then(function () { return self.send(phone); });
-    if (!Store.remote) { self.demo[phone] = true; return Promise.resolve({ ok: true, demo: true }); }
-    return this.call({ action: 'send', phone: phone }).then(function (j) { self.demo[phone] = !!j.demo; return j; }).catch(function () { self.demo[phone] = true; return { ok: true, demo: true, offline: true }; });
+    return Store.init().then(function () {
+      var c = self.client(); if (!c) return null;
+      return c.auth.getSession().then(function (r) { var u = r && r.data && r.data.session && r.data.session.user; self.set(u); return self.uid; }).catch(function () { return null; });
+    });
   },
-  verify: function (phone, code) {
+  set: function (u) { this.uid = u && u.email_confirmed_at !== null ? u.id : null; this.email = u ? (u.email || null) : null; },
+  clean: function (e) { return String(e || '').trim().toLowerCase(); },
+  valid: function (e) { return e.length <= 254 && /^[^\s@]{1,64}@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(e); },
+  /* the server keeps the full list; this is only so the person hears it straight away */
+  TEMP: ['mailinator.com', 'yopmail.com', 'guerrillamail.com', '10minutemail.com', 'temp-mail.org', 'tempmail.com', 'trashmail.com', 'maildrop.cc', 'getnada.com', 'mohmal.com', 'sharklasers.com', 'dispostable.com', '1secmail.com', 'mail.tm', 'burnermail.io'],
+  temp: function (e) { return this.TEMP.indexOf(e.split('@')[1] || '') >= 0; },
+  check: function (e) { return !e ? 'empty' : !this.valid(e) ? 'bad_email' : this.temp(e) ? 'disposable_email' : null; },
+  err: function (e) {
+    var m = String((e && e.message) || ''), code = (e && e.code) || '', st = e && e.status;
+    if (st === 429 || /rate|security purposes|after \d+ seconds/i.test(m + code)) return 'too_many';
+    if (/expired|invalid/i.test(m + code)) return 'wrong';
+    if (/fetch|network|load failed/i.test(m)) return 'offline';
+    if (/signups? not allowed|disabled/i.test(m + code)) return 'closed';
+    return 'unknown';
+  },
+  send: function (email) {
     var self = this;
-    if (!Store.inited) return Store.init().then(function () { return self.verify(phone, code); });
-    if (this.demo[phone] || !Store.remote) return Promise.resolve({ ok: code === '0000' });
-    return this.call({ action: 'verify', phone: phone, code: code }).catch(function () { return { ok: false, error: 'offline' }; });
+    return Store.init().then(function () {
+      var c = self.client();
+      if (!c) return { ok: true, demo: true };
+      return c.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } }).then(function (r) { return r.error ? { ok: false, error: self.err(r.error) } : { ok: true }; }).catch(function (e) { return { ok: false, error: self.err(e) }; });
+    });
   },
-  msg: function (e) { return { too_many: 'جربت مرات كثيرة. انتظر 10 دقايق.', expired: 'الرمز انتهى. اطلب رمز جديد.', wrong: 'الرمز غلط. تأكد منه وجرّب مرة ثانية.', no_code: 'اطلب رمز أول.', sms_failed: 'ما قدرنا نرسل الرسالة. جرّب بعد شوي.', offline: 'ما في اتصال. جرّب مرة ثانية.' }[e] || 'صار خطأ. جرّب مرة ثانية.'; }
+  verify: function (email, code) {
+    var self = this;
+    return Store.init().then(function () {
+      var c = self.client();
+      if (!c) { if (code !== self.DEMO) return { ok: false, error: 'wrong' }; self.uid = 'demo-' + email; self.email = email; return { ok: true }; }
+      return c.auth.verifyOtp({ email: email, token: code, type: 'email' }).then(function (r) {
+        if (r.error || !r.data || !r.data.user) return { ok: false, error: self.err(r.error) };
+        self.set(r.data.user); return { ok: true };
+      }).catch(function (e) { return { ok: false, error: self.err(e) }; });
+    });
+  },
+  signOut: function () { this.uid = null; this.email = null; var c = this.c; return c ? c.auth.signOut().catch(function () {}) : Promise.resolve(); },
+  msg: function (e) { return { empty: 'اكتب إيميلك أول.', bad_email: 'الإيميل غير صحيح. تأكد منه.', disposable_email: 'هذا إيميل مؤقت. استخدم إيميلك الدائم.', too_many: 'طلبت رموز كثيرة. انتظر شوي وجرّب.', wrong: 'الرمز غلط أو انتهى. تأكد منه أو اطلب رمز جديد.', closed: 'التسجيل مقفل الحين. كلّم فريق وينه.', offline: 'ما في اتصال. جرّب مرة ثانية.' }[e] || 'صار خطأ. جرّب مرة ثانية.'; }
 };
 /* ---------------- push notifications: free, and they arrive with the app closed ---------------- */
 var Push = {
@@ -1241,7 +1274,9 @@ var Push = {
       var j = sub.toJSON();
       return Store.init().then(function () {
         if (!Store.remote || !Remote.c) throw new Error('offline');
-        return Remote.c.rpc('push_subscribe', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_role: role, p_ref: String(ref), p_ua: navigator.userAgent.slice(0, 200) });
+        var pc = role === 'driver' ? Auth.client() : Remote.c; /* driver: the server takes who it is from the email login */
+        if (!pc) throw new Error('offline');
+        return pc.rpc('push_subscribe', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_role: role, p_ref: String(ref), p_ua: navigator.userAgent.slice(0, 200) });
       });
     }).then(function (res) {
       if (res && res.error) throw res.error;
@@ -1306,6 +1341,12 @@ var ERR = {
   bad_location: 'الموقع خارج عُمان.',
   id_taken: 'صار تعارض بسيط. اضغط مرة ثانية.',
   phone_registered: 'هذا الرقم مسجّل بمحل ثاني.',
+  auth_required: 'لازم تأكد إيميلك أول.',
+  email_unconfirmed: 'لازم تأكد إيميلك أول.',
+  disposable_email: 'هذا إيميل مؤقت. استخدم إيميلك الدائم.',
+  no_shop: 'ما لقينا محل على هذا الإيميل. سجّل محلك.',
+  cr_taken: 'هذا السجل التجاري مسجّل بمحل ثاني. لو هذا محلك، كلّم فريق وينه.',
+  bad_cr: 'رقم السجل التجاري غير صحيح.',
   rate_limited: 'محاولات كثيرة بوقت قصير. انتظر شوي وجرّب.',
   no_offer: 'ما في عرض من هذا المحل على الطلب.',
   not_chosen: 'الزبون حجز عند محل ثاني.',
@@ -1344,10 +1385,12 @@ var Api = {
   claimed: {},
   errText: function (code, act, who) { return ERR_BY[act + ':' + code] || ERR_BY[who + ':' + code] || ERR[code] || 'صار خطأ. جرّب مرة ثانية.'; },
   fail: function (r, act, who) { toast(this.errText(r.code, act, who)); return r; },
-  rpc: function (fn, args) {
+  /* asSelf: send it on the signed-in client (create_request, register_shop, shop_signin, my_requests need the email login) */
+  rpc: function (fn, args, asSelf) {
     return Store.init().then(function () {
-      if (!Remote.c) return { ok: false, code: 'offline' };
-      return Promise.resolve(Remote.c.rpc(fn, args)).then(function (res) {
+      var c = asSelf ? Auth.client() : Remote.c;
+      if (!c) return { ok: false, code: 'offline' };
+      return Promise.resolve(c.rpc(fn, args)).then(function (res) {
         if (res.error) {
           var m = String(res.error.message || ''), x = /wn:([a-z_]+)/.exec(m);
           try { console.warn('[waynah] rpc failed', fn, x ? x[1] : m.slice(0, 80)); } catch (e) {}
@@ -1363,12 +1406,6 @@ var Api = {
   rt: function (rid) { return (me.tokens && me.tokens[rid]) || null; },
   st: function () { return myShop.token || null; },
   keep: function (rid, token, code) { me.tokens = me.tokens || {}; me.codes = me.codes || {}; if (token) me.tokens[rid] = token; if (code) me.codes[rid] = code; saveMe(); },
-  phone: function () {
-    if (me.full) return me.full;
-    if (!me.phone) return null;
-    var c = COUNTRIES.filter(function (x) { return x.iso === me.iso; })[0] || COUNTRIES[0];
-    return OTP.e164(c.dial, me.phone);
-  },
   /* optimistic edit of the in-memory cache. Returns an undo function */
   patch: function (rid, fields, msgRow) {
     var s1 = Remote.snap('requests'), s2 = msgRow ? Remote.snap('messages') : null;
@@ -1387,7 +1424,8 @@ var Api = {
     var snap = Remote.snap('requests');
     Remote.cache.requests.push({ id: id, code: '', car: doc.car, part: doc.part, note: doc.note || '', tags: doc.tags || [], photo: doc.photo || null, status: 'open', chosen: null, final_price: null, created_at: doc.createdAt, declined: {} });
     Remote.emit('requests');
-    return this.rpc('create_request', { p_car: { brand: doc.car.brand, brandAr: doc.car.brandAr, model: doc.car.model, year: doc.car.year }, p_part: doc.part, p_note: doc.note || '', p_tags: doc.tags || [], p_photo: doc.photo || null, p_phone: doc.phone, p_id: id }).then(function (r) {
+    return this.rpc('create_request', { p_car: { brand: doc.car.brand, brandAr: doc.car.brandAr, model: doc.car.model, year: doc.car.year }, p_part: doc.part, p_note: doc.note || '', p_tags: doc.tags || [], p_photo: doc.photo || null, p_id: id }, true).then(function (r) {
+      if (!r.ok && /^(auth_required|email_unconfirmed)$/.test(r.code)) { Remote.undo('requests', snap); return Auth.signOut().then(function () { me.uid = null; saveMe(); return r; }); }
       if (!r.ok) { Remote.undo('requests', snap); return self.fail(r, 'create', 'd'); }
       var row = Remote.row('requests', function (x) { return x.id === id; });
       if (row) { row.code = r.data.code; row.created_at = r.data.created_at; }
@@ -1428,18 +1466,20 @@ var Api = {
     if (!Store.remote) return Store.merge('requests/' + rid, { review: shown }).then(function () { return self.ok(); });
     return this.dact(rid, 'review', { p_stars: rv.stars, p_tags: rv.tags, p_comment: rv.comment }, function () { return self.patch(rid, { review: shown }); });
   },
-  /* the driver's token goes with every call about a request; legacy requests (no token yet) send null inside the 14-day window */
-  claimLegacy: function () {
-    if (!Store.remote) return;
-    var full = this.phone(); if (!full) return;
+  /* signed in by email: bring back this account's requests (and a token for each) on any device. Once per visit */
+  synced: false,
+  syncMine: function () {
+    if (!Store.remote || !Auth.uid || this.synced) return;
+    this.synced = true;
     me.tokens = me.tokens || {};
-    (me.reqs || []).forEach(function (id) {
-      if (me.tokens[id] || (me.claimFailed || {})[id] || Api.claimed[id] || !reqById(id)) return;
-      Api.claimed[id] = true; /* one try per request per visit */
-      Api.rpc('claim_request', { p_request_id: id, p_phone: full }).then(function (r) {
-        if (r.ok) { Api.keep(id, r.data.token, null); return; }
-        if (r.code === 'phone_mismatch' || r.code === 'not_found' || r.code === 'bad_phone') { me.claimFailed = me.claimFailed || {}; me.claimFailed[id] = true; saveMe(); }
+    this.rpc('my_requests', { p_have: Object.keys(me.tokens) }, true).then(function (r) {
+      if (!r.ok) { Api.synced = false; return; }
+      var add = false;
+      (r.data.items || []).forEach(function (x) {
+        if (me.reqs.indexOf(x.id) < 0) { me.reqs.push(x.id); add = true; }
+        Api.keep(x.id, x.token || null, x.code || null);
       });
+      saveMe(); if (add) render();
     });
   },
 
@@ -1466,15 +1506,20 @@ var Api = {
   registerShop: function (id, d) {
     var self = this;
     if (!Store.remote) {
-      Store.set('shops/' + id, { name: d.name, type: d.type, area: 'صناعية المعبيلة', cats: d.cats, brands: d.brands, phoneLast4: d.phone.slice(-4), phone: d.phone, plan: 'founder', createdAt: now(), lat: d.lat, lng: d.lng });
+      Store.set('shops/' + id, { name: d.name, type: d.type, area: 'صناعية المعبيلة', cats: d.cats, brands: d.brands, plan: 'founder', createdAt: now(), lat: d.lat, lng: d.lng });
       return Promise.resolve({ ok: true, data: { id: id, token: null } });
     }
-    return this.rpc('register_shop', { p_name: d.name, p_type: d.type, p_cats: d.cats, p_brands: d.brands, p_phone: d.phone, p_lat: d.lat, p_lng: d.lng, p_id: id }).then(function (r) {
-      if (!r.ok) return r; /* the caller shows the message on the registration screen */
-      Remote.cache.shops.push({ id: r.data.id, name: d.name, type: d.type, area: 'صناعية المعبيلة', cats: d.cats, brands: d.brands, phone_last4: d.phone.slice(-4), plan: 'founder', created_at: r.data.created_at, lat: d.lat, lng: d.lng });
+    return this.rpc('register_shop', { p_name: d.name, p_type: d.type, p_cats: d.cats, p_brands: d.brands, p_lat: d.lat, p_lng: d.lng, p_id: id, p_cr: d.cr || null }, true).then(function (r) {
+      if (!r.ok || r.data.existing) { if (r.ok) Remote.reload('shops'); return r; } /* the caller shows the message; existing = this account already has a shop, so it signs in */
+      Remote.cache.shops.push({ id: r.data.id, name: d.name, type: d.type, area: 'صناعية المعبيلة', cats: d.cats, brands: d.brands, phone_last4: null, plan: 'founder', created_at: r.data.created_at, lat: d.lat, lng: d.lng });
       Remote.emit('shops'); Remote.reload('shops');
       return r;
     });
+  },
+  /* a shop signing in by email on a new device: the server hands back this account's shop and a fresh token */
+  shopSignin: function () {
+    if (!Store.remote) { var mine = D.shops.filter(function (s) { return !String(s.id).indexOf('s'); })[0]; return Promise.resolve(mine ? { ok: true, data: { id: mine.id, token: null } } : { ok: false, code: 'no_shop' }); }
+    return this.rpc('shop_signin', {}, true);
   },
   offer: function (rid, sid, o) {
     var self = this, t = now();
@@ -1571,8 +1616,10 @@ var Api = {
 var D = { requests: [], shops: [], config: { demoShops: true }, ready: false };
 
 /* ---------------- state ---------------- */
-var me = LS.get('waynah.me', { verified: false, phone: '', iso: detectCountry(), car: { brand: 'toyota', brandAr: 'تويوتا', model: 'لاندكروزر', year: 2019 }, reqs: [] });
+var me = LS.get('waynah.me', { uid: null, email: '', iso: detectCountry(), car: { brand: 'toyota', brandAr: 'تويوتا', model: 'لاندكروزر', year: 2019 }, reqs: [] });
 me.tokens = me.tokens || {}; me.codes = me.codes || {}; /* request tokens + pickup codes, kept per request id (phase 2) */
+/* sign-in moved from phone to email: the old phone fields are dropped from this device, and the person confirms an email once */
+if ('phone' in me || 'full' in me || 'verified' in me) { delete me.phone; delete me.full; delete me.verified; delete me.claimFailed; me.uid = null; LS.set('waynah.me', me); }
 var myShop = LS.get('waynah.shop', { id: null });
 /* a shop opening its sign-in link (#shop&id=..&t=..): keep id + token, then clean the address bar */
 (function () {
@@ -1585,8 +1632,8 @@ var myShop = LS.get('waynah.shop', { id: null });
 })();
 var admSaved = SS.get('waynah.adm') || ''; /* admin secret: this tab only (sessionStorage), never localStorage */
 var S = {
-  d: { view: 'welcome', cat: null, more: false, pending: false, step: 'phone', phone: '', code: '', err: '', banner: null, picker: false, pq: '', sheet: false, cs: { step: 'brand', brand: null, model: null, q: '' }, part: '', photo: null, tags: [], note: '', rid: null, sid: null, sort: 'cheap', draft: '', stars: 0, rtags: [], comment: '' },
-  s: { view: myShop.id ? 'dash' : 'intro', reg: { name: '', type: '', cats: [], brands: [], phone: '', code: '', sent: false, loc: null }, err: '', rid: null, offer: { cond: 'أصلي مستعمل', price: '', avail: 'موجودة الحين', note: '', photo: null }, draft: '', pickup: '', banner: null, tab: 'new' },
+  d: { view: 'welcome', cat: null, more: false, pending: false, step: 'email', email: '', code: '', err: '', banner: null, picker: false, pq: '', sheet: false, cs: { step: 'brand', brand: null, model: null, q: '' }, part: '', photo: null, tags: [], note: '', rid: null, sid: null, sort: 'cheap', draft: '', stars: 0, rtags: [], comment: '' },
+  s: { view: myShop.id ? 'dash' : 'intro', reg: { name: '', type: '', cats: [], brands: [], cr: '', email: '', code: '', sent: false, loc: null }, login: false, err: '', rid: null, offer: { cond: 'أصلي مستعمل', price: '', avail: 'موجودة الحين', note: '', photo: null }, draft: '', pickup: '', banner: null, tab: 'new' },
   a: { unlocked: !!admSaved, role: 'CEO', secret: admSaved, busy: false, err: '', tab: 'overview', sel: null, confirm: false }
 };
 var saveMe = function () { LS.set('waynah.me', me); };
@@ -1791,22 +1838,21 @@ var Driver = {
       (mine.length ? '<h2 style="font-size:15px;margin-top:4px">طلباتي</h2>' + mine.map(function (r) { var k = offersOf(r).length; return '<button class="li" data-act="d-open" data-id="' + r.id + '"><span class="grow"><b style="display:block">' + esc(r.part) + '</b><span class="xs muted">' + ago(r.createdAt) + ' · ' + k + ' عرض</span></span>' + statusPill(r) + '</button>'; }).join('') : '');
   },
   login: function () {
-    var d = S.d, c = COUNTRIES.filter(function (x) { return x.iso === me.iso; })[0] || COUNTRIES[0];
-    if (d.step === 'phone') return '<div class="row">' + backBtn('d-part') + '</div>' +
-      '<div class="row" style="align-items:flex-end"><img src="' + MZ + 'm-wave.webp" alt="" style="width:110px;flex-shrink:0"><div class="card small" style="margin-bottom:60px">قبل ما أرسل طلبك، عطني رقمك وأرسل لك رمز تأكيد.</div></div>' +
-      '<h1 style="font-size:26px">وش رقم جوالك؟</h1><p class="muted small" style="margin:0">رقمك ما يطلع للمحلات. كل التواصل داخل وينه.</p>' +
-      '<div class="row" style="direction:ltr"><button class="btn" data-act="d-picker" aria-label="مفتاح الدولة ' + esc(c.name) + '" style="flex-shrink:0;font-family:var(--f-display)"><span class="xs" style="background:var(--primary);color:var(--on-primary);padding:2px 6px;border-radius:6px">' + c.iso + '</span> +' + c.dial + '</button>' +
-      '<label for="d-phone" class="sr">رقم الجوال</label><input id="d-phone" class="input ltr grow" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="' + (c.iso === 'OM' ? '9XXX XXXX' : 'رقمك') + '" value="' + esc(d.phone) + '" data-bind="d.phone" data-digits="12"></div>' +
-      (d.err ? '<p class="err" role="alert">' + esc(d.err) + '</p>' : '<p class="xs muted" style="margin:0">اخترنا ' + esc(c.name) + ' من توقيت جهازك. تقدر تغيّرها.</p>') +
-      '<button class="btn btn-primary btn-lg btn-block" data-act="d-send-otp">أرسل الرمز</button>' +
-      '<p class="xs muted" style="text-align:center;margin:0">يوصلك رمز من 4 أرقام برسالة نصية.</p>';
+    var d = S.d;
+    if (d.step === 'email') return '<div class="row">' + backBtn('d-part') + '</div>' +
+      '<div class="row" style="align-items:flex-end"><img src="' + MZ + 'm-wave.webp" alt="" style="width:110px;flex-shrink:0"><div class="card small" style="margin-bottom:60px">قبل ما أرسل طلبك، عطني إيميلك وأرسل لك رمز تأكيد.</div></div>' +
+      '<h1 style="font-size:26px">وش إيميلك؟</h1><p class="muted small" style="margin:0">إيميلك ما يطلع للمحلات. كل التواصل داخل وينه.</p>' +
+      '<label for="d-email" class="sr">الإيميل</label><input id="d-email" class="input ltr" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="name@example.com" value="' + esc(d.email) + '" data-bind="d.email">' +
+      (d.err ? '<p class="err" role="alert">' + esc(d.err) + '</p>' : '') +
+      '<button class="btn btn-primary btn-lg btn-block" data-act="d-send-otp"' + (d.sending ? ' disabled' : '') + '>' + (d.sending ? 'لحظة…' : 'أرسل الرمز') + '</button>' +
+      '<p class="xs muted" style="text-align:center;margin:0">يوصلك رمز على الإيميل. شيّك على البريد المزعج (Spam) لو ما شفته.</p>';
     return '<div class="row">' + backBtn('d-otp-back') + '</div>' +
       '<div style="text-align:center"><img src="' + MZ + 'm-chat.webp" alt="" style="width:120px"></div>' +
       '<h1 style="font-size:24px;text-align:center">اكتب رمز التأكيد</h1>' +
-      '<p class="muted small" style="text-align:center;margin:0">أرسلنا رمز من 4 أرقام إلى <b class="num" style="direction:ltr;unicode-bidi:isolate">+' + c.dial + ' ' + esc(d.phone) + '</b></p>' +
-      '<label for="d-code" class="sr">رمز التأكيد</label><input id="d-code" class="input ltr" style="text-align:center;font-size:28px;letter-spacing:.5em" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="4" placeholder="----" value="' + esc(d.code) + '" data-bind="d.code" data-digits="4">' +
+      '<p class="muted small" style="text-align:center;margin:0">أرسلنا رمز إلى <b style="direction:ltr;unicode-bidi:isolate">' + esc(d.email) + '</b></p>' +
+      '<label for="d-code" class="sr">رمز التأكيد</label><input id="d-code" class="input ltr" style="text-align:center;font-size:28px;letter-spacing:.4em" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="------" value="' + esc(d.code) + '" data-bind="d.code" data-digits="8">' +
       (d.err ? '<p class="err" role="alert" style="text-align:center">' + esc(d.err) + '</p>' : '') +
-      '<button class="btn btn-primary btn-lg btn-block" data-act="d-verify">تأكيد</button>' +
+      '<button class="btn btn-primary btn-lg btn-block" data-act="d-verify"' + (d.checking ? ' disabled' : '') + '>' + (d.checking ? 'لحظة…' : 'تأكيد') + '</button>' +
       '<button class="btn btn-block" data-act="d-resend">ما وصلني؟ أعد الإرسال</button>';
   },
   offers: function () {
@@ -1831,7 +1877,7 @@ var Driver = {
           '<button class="btn btn-primary btn-sm" data-act="d-choose" data-sid="' + esc(o.shopId) + '">' + (r.chosen === o.shopId ? 'افتح المحادثة' : 'اختار هذا العرض') + '</button></div></div>';
       }).join('') +
       (waiting ? '<div class="waiting"><span class="dots"><i></i><i></i><i></i></span> ننتظر ردود محلات ثانية…</div>' : '') +
-      (me.full ? pushCard('driver', me.full, 'خلّ العروض توصلك وأنت برّا', 'نرسل لك إشعار أول ما يرد محل، حتى لو سكّرت وينه.') : '') +
+      (me.uid ? pushCard('driver', me.uid, 'خلّ العروض توصلك وأنت برّا', 'نرسل لك إشعار أول ما يرد محل، حتى لو سكّرت وينه.') : '') +
       (waiting ? '<button class="btn btn-sm" data-act="d-cancel" data-id="' + r.id + '" style="align-self:center">ألغ الطلب</button>' : '');
   },
   chat: function () {
@@ -1926,7 +1972,8 @@ var Shop = {
   intro: function () {
     return '<div class="hero" style="min-height:220px;align-items:flex-end"><div class="grow" style="align-self:center"><div class="xs" style="color:var(--caramel);font-weight:700;letter-spacing:.08em">وينه للأعمال</div><h1 style="font-size:27px;margin-top:8px">خلّ الزبون يجيك<br>وهو عارف السعر.</h1><p>طلبات قطع الغيار توصلك جاهزة، وأنت بس ترد.</p></div><div class="mascot sm" style="--ms:130px;margin:0 0 -34px;flex-shrink:0">' + mascotInner() + '</div></div>' +
       [['الطلبات توصلك جاهزة', 'الزبون يكتب القطعة وسيارته ويرفق صورة. ما تحتاج اتصالات.'], ['ترد بعرضك وتتفاوض داخل التطبيق', 'رقمك ورقم الزبون مخفيين.'], ['زبائن جدد للمعبيلة', 'حتى اللي ما يعرف الصناعية يوصلك بالخريطة.'], ['15 ر.ع بالشهر، وأول شهر مجاني', 'والشهر المجاني يبدأ من أول زبون، مو من يوم التسجيل.']].map(function (p) { return '<div class="row" style="align-items:flex-start"><span class="thumb" style="width:32px;height:32px;border-radius:10px;font-size:14px;color:var(--accent)">✓</span><div><b>' + p[0] + '</b><div class="small muted">' + p[1] + '</div></div></div>'; }).join('') +
-      '<button class="btn btn-primary btn-lg btn-block" data-act="s-reg">سجّل محلك</button><p class="xs muted" style="text-align:center;margin:0">التسجيل ياخذ دقيقتين. بدون عقد.</p>';
+      '<button class="btn btn-primary btn-lg btn-block" data-act="s-reg">سجّل محلك</button><p class="xs muted" style="text-align:center;margin:0">التسجيل ياخذ دقيقتين. بدون عقد.</p>' +
+      '<button class="btn btn-block" data-act="s-login">عندك محل مسجّل؟ ادخل بإيميلك</button>';
   },
   reg: function () {
     var r = S.s.reg;
@@ -1935,18 +1982,20 @@ var Shop = {
       '<div><span class="label">نوع النشاط</span>' + chips(['قطع غيار', 'كراج / ورشة', 'إطارات وبطاريات'], r.type, 's-type') + '</div>' +
       '<div><span class="label">موقع المحل</span><div class="soft small row" style="justify-content:space-between"><b>صناعية المعبيلة</b><span class="muted xs">' + (r.loc ? 'حددت الموقع ✓' : 'اضغط على الخريطة') + '</span></div><div id="pickmap" style="position:relative;height:200px;border-radius:14px;margin-top:8px;overflow:hidden;background:#0E1A3A"></div></div>' +
       '<div><span class="label">الأقسام اللي تبيعها</span>' + chips(['إطارات', 'بطاريات', 'زيوت', 'فلاتر', 'فحمات', 'قطع محرك', 'قطع بودي', 'كهرباء', 'مكيف'], r.cats, 's-cat', true) + '</div>' +
-      '<div><span class="label">السيارات اللي تخدمها</span>' + chips(['كل السيارات'].concat(CARS.map(function (c) { return c.ar; })), r.brands, 's-brand', true) + '</div></div>' +
+      '<div><span class="label">السيارات اللي تخدمها</span>' + chips(['كل السيارات'].concat(CARS.map(function (c) { return c.ar; })), r.brands, 's-brand', true) + '</div>' +
+      '<div><label class="label" for="s-cr">رقم السجل التجاري <span class="muted xs">(اختياري)</span></label><input id="s-cr" class="input ltr" type="text" inputmode="numeric" placeholder="1234567" value="' + esc(r.cr) + '" data-bind="s.reg.cr" data-digits="12"><div class="xs muted" style="margin-top:4px">يثبّت إن المحل حقيقي. كل سجل يتسجّل بمحل واحد بس.</div></div></div>' +
       (S.s.err ? '<p class="err" role="alert">' + esc(S.s.err) + '</p>' : '') +
       '<button class="btn btn-primary btn-lg btn-block" data-act="s-reg-next">التالي</button>';
   },
   otp: function () {
-    var r = S.s.reg;
-    return '<div class="row">' + backBtn('s-reg') + '<h1 class="grow" style="font-size:22px">رقم المحل</h1><span class="xs muted">2 من 2</span></div>' +
-      '<p class="muted small" style="margin:0">عليه توصلك تنبيهات الطلبات. ما يطلع للزبائن.</p>' +
-      '<div class="row" style="direction:ltr"><span class="btn" style="flex-shrink:0;font-family:var(--f-display)">+968</span><label for="s-phone" class="sr">رقم الجوال</label><input id="s-phone" class="input ltr grow" type="tel" inputmode="numeric" placeholder="9XXX XXXX" value="' + esc(r.phone) + '" data-bind="s.reg.phone" data-digits="8"></div>' +
-      (r.sent ? '<label class="label" for="s-code">رمز التأكيد</label><input id="s-code" class="input ltr" style="text-align:center;font-size:26px;letter-spacing:.5em" inputmode="numeric" maxlength="4" placeholder="----" value="' + esc(r.code) + '" data-bind="s.reg.code" data-digits="4">' : '') +
+    var r = S.s.reg, login = S.s.login;
+    return '<div class="row">' + backBtn(login ? 's-intro' : 's-reg') + '<h1 class="grow" style="font-size:22px">' + (login ? 'دخول المحل' : 'إيميل المحل') + '</h1>' + (login ? '' : '<span class="xs muted">2 من 2</span>') + '</div>' +
+      '<p class="muted small" style="margin:0">' + (login ? 'اكتب الإيميل اللي سجّلت فيه محلك، ويوصلك رمز دخول.' : 'بهذا الإيميل تدخل لمحلك من أي جوال. ما يطلع للزبائن.') + '</p>' +
+      '<label class="label" for="s-email">الإيميل</label><input id="s-email" class="input ltr" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="shop@example.com" value="' + esc(r.email) + '" data-bind="s.reg.email"' + (r.sent ? ' readonly' : '') + '>' +
+      (r.sent ? '<label class="label" for="s-code">رمز التأكيد من الإيميل</label><input id="s-code" class="input ltr" style="text-align:center;font-size:26px;letter-spacing:.4em" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="------" value="' + esc(r.code) + '" data-bind="s.reg.code" data-digits="8">' : '') +
       (S.s.err ? '<p class="err" role="alert">' + esc(S.s.err) + '</p>' : '') +
-      '<button class="btn btn-primary btn-lg btn-block" data-act="s-otp">' + (r.sent ? 'تأكيد' : 'أرسل الرمز') + '</button><p class="xs muted" style="text-align:center;margin:0">على هذا الرقم توصلك تنبيهات الطلبات برسائل نصية.</p>';
+      '<button class="btn btn-primary btn-lg btn-block" data-act="s-otp"' + (S.s.busy ? ' disabled' : '') + '>' + (S.s.busy ? 'لحظة…' : r.sent ? 'تأكيد' : 'أرسل الرمز') + '</button>' +
+      (r.sent ? '<button class="btn btn-block" data-act="s-otp-again">غيّر الإيميل أو أعد الإرسال</button>' : '<p class="xs muted" style="text-align:center;margin:0">شيّك على البريد المزعج (Spam) لو ما وصلك.</p>');
   },
   plan: function () {
     var shop = this.me() || {};
@@ -2311,29 +2360,31 @@ var A = {
   'd-picker-close-bg': function (el, ev) { if (ev.target === el) S.d.picker = false; else return false; },
   'd-country': function (el) { me.iso = el.dataset.v; saveMe(); S.d.picker = false; S.d.err = ''; },
   'd-send-otp': function () {
-    var d = S.d, len = d.phone.length;
-    if (me.iso === 'OM' ? len !== 8 : (len < 7 || len > 12)) { d.err = !len ? 'اكتب رقم جوالك أول.' : (me.iso === 'OM' ? 'رقم عُمان لازم يكون 8 أرقام.' : 'الرقم غير صحيح.'); return; }
-    d.err = ''; d.step = 'otp'; d.code = ''; d.sending = true;
-    var c = COUNTRIES.filter(function (x) { return x.iso === me.iso; })[0] || COUNTRIES[0], full = OTP.e164(c.dial, d.phone);
-    OTP.send(full).then(function (j) {
+    var d = S.d, email = Auth.clean(d.email), bad = Auth.check(email);
+    if (bad) { d.err = Auth.msg(bad); return; }
+    if (d.sending) return;
+    d.email = email; d.err = ''; d.sending = true;
+    Auth.send(email).then(function (j) {
       d.sending = false;
-      if (!j.ok) { d.step = 'phone'; d.err = OTP.msg(j.error); render(); return; }
-      if (j.demo) setTimeout(function () { if (S.d.step === 'otp' && S.d.view === 'login') { S.d.banner = 'رمز التأكيد حقك: 0000. اضغط هنا لتعبئته.'; render(); } }, 900);
-      else toast('أرسلنا لك رسالة فيها الرمز.');
+      if (!j.ok) { d.step = 'email'; d.err = Auth.msg(j.error); render(); return; }
+      d.step = 'otp'; d.code = '';
+      if (j.demo) setTimeout(function () { if (S.d.step === 'otp' && S.d.view === 'login') { S.d.banner = 'رمز التجربة: ' + Auth.DEMO + '. اضغط هنا لتعبئته.'; render(); } }, 900);
+      else toast('أرسلنا لك إيميل فيه الرمز.');
       render();
     });
   },
-  'd-otp-back': function () { S.d.step = 'phone'; S.d.banner = null; S.d.err = ''; },
-  'd-resend': function () { S.d.banner = null; S.d.step = 'phone'; A['d-send-otp'](); },
-  'd-banner': function () { if (S.d.view === 'login') S.d.code = '0000'; S.d.banner = null; },
+  'd-otp-back': function () { S.d.step = 'email'; S.d.banner = null; S.d.err = ''; },
+  'd-resend': function () { S.d.banner = null; S.d.step = 'email'; A['d-send-otp'](); },
+  'd-banner': function () { if (S.d.view === 'login') S.d.code = Auth.DEMO; S.d.banner = null; },
   'd-verify': function () {
-    var d = S.d; if (d.code.length !== 4) { d.err = 'اكتب الرمز المكوّن من 4 أرقام.'; return; }
-    var c = COUNTRIES.filter(function (x) { return x.iso === me.iso; })[0] || COUNTRIES[0], full = OTP.e164(c.dial, d.phone);
+    var d = S.d; if (d.code.length < 6) { d.err = 'اكتب الرمز كامل من الإيميل.'; return; }
+    if (d.checking) return;
     d.err = ''; d.checking = true;
-    OTP.verify(full, d.code).then(function (j) {
+    Auth.verify(d.email, d.code).then(function (j) {
       d.checking = false;
-      if (!j.ok) { d.err = OTP.msg(j.error || 'wrong'); d.code = ''; render(); return; }
-      me.verified = true; me.phone = d.phone; me.full = full; saveMe(); d.banner = null; d.err = ''; d.view = 'part'; toast('هلا فيك! تأكدنا من رقمك.');
+      if (!j.ok) { d.err = Auth.msg(j.error || 'wrong'); d.code = ''; render(); return; }
+      me.uid = Auth.uid; me.email = Auth.email; saveMe(); d.banner = null; d.err = ''; d.code = ''; d.step = 'email'; d.view = 'part'; toast('هلا فيك! تأكدنا من إيميلك.');
+      Api.synced = false; Api.syncMine();
       if (d.pending) A['d-submit']();
       render();
     });
@@ -2350,14 +2401,15 @@ var A = {
   'd-photo-del': function () { S.d.photo = null; },
   'd-submit': function () {
     var d = S.d; if (!d.part.trim()) { d.err = 'اختر قسم أو اكتب اسم القطعة أول.'; return; }
-    if (!me.verified) { d.pending = true; d.view = 'login'; d.step = 'phone'; d.err = ''; return; }
+    if (!me.uid) { d.pending = true; d.view = 'login'; d.step = 'email'; d.err = ''; return; }
     d.pending = false;
     var id = 'r' + uid();
-    var doc = { car: me.car, part: d.part.trim(), note: d.note.trim(), tags: d.tags.slice(), photo: d.photo || null, status: 'open', createdAt: now(), offers: {}, msgs: {}, chosen: null, finalPrice: null, declined: {}, phone: Api.phone() };
+    var doc = { car: me.car, part: d.part.trim(), note: d.note.trim(), tags: d.tags.slice(), photo: d.photo || null, status: 'open', createdAt: now(), offers: {}, msgs: {}, chosen: null, finalPrice: null, declined: {} };
     Api.createRequest(id, doc).then(function (r) {
       if (r.ok) { runDemoShops(id, doc.part); return; }
       me.reqs = me.reqs.filter(function (x) { return x !== id; }); saveMe();
       if (S.d.rid === id) { S.d.rid = null; S.d.view = 'part'; S.d.part = doc.part; S.d.note = doc.note; S.d.tags = doc.tags; S.d.photo = doc.photo; }
+      if (/^(auth_required|email_unconfirmed)$/.test(r.code)) { S.d.pending = true; S.d.view = 'login'; S.d.step = 'email'; S.d.err = 'دخولك انتهى. أكّد إيميلك مرة ثانية.'; }
       render();
     });
     me.reqs = [id].concat(me.reqs).slice(0, 30); saveMe();
@@ -2390,48 +2442,67 @@ var A = {
   'd-rtag': function (el) { var t = S.d.rtags, v = el.dataset.v; S.d.rtags = t.indexOf(v) >= 0 ? t.filter(function (x) { return x !== v; }) : t.concat([v]); },
   'd-send-review': function () { var d = S.d; if (!d.stars) { d.err = 'اختر عدد النجوم.'; return; } var rid = d.rid; Api.review(rid, { stars: d.stars, tags: d.rtags.slice(), comment: d.comment.trim() }).then(function (res) { if (!res.ok && res.code !== 'already_reviewed' && S.d.rid === rid && S.d.view === 'thanks') S.d.view = 'review'; render(); }); d.view = 'thanks'; confetti(); Buddy.say(Buddy.line('thanks')); },
   /* shop */
-  's-intro': function () { S.s.view = 'intro'; S.s.err = ''; },
-  's-reg': function () { S.s.view = 'reg'; S.s.err = ''; },
+  's-intro': function () { S.s.view = 'intro'; S.s.err = ''; S.s.login = false; S.s.reg.sent = false; S.s.reg.code = ''; },
+  's-reg': function () { S.s.view = 'reg'; S.s.err = ''; S.s.login = false; },
   's-type': function (el) { S.s.reg.type = el.dataset.v; S.s.err = ''; },
   's-cat': function (el) { var t = S.s.reg.cats, v = el.dataset.v; S.s.reg.cats = t.indexOf(v) >= 0 ? t.filter(function (x) { return x !== v; }) : t.concat([v]); },
   's-brand': function (el) { var t = S.s.reg.brands, v = el.dataset.v; S.s.reg.brands = t.indexOf(v) >= 0 ? t.filter(function (x) { return x !== v; }) : t.concat([v]); },
   's-reg-next': function () { var r = S.s.reg; if (!r.name.trim()) { S.s.err = 'اكتب اسم المحل.'; return; } if (!r.type) { S.s.err = 'اختر نوع النشاط.'; return; } if (!r.cats.length) { S.s.err = 'اختر قسم واحد على الأقل.'; return; } S.s.err = ''; S.s.view = 'otp'; },
+  's-login': function () { S.s.login = true; S.s.reg.sent = false; S.s.reg.code = ''; S.s.err = ''; S.s.view = 'otp'; },
+  's-otp-again': function () { S.s.reg.sent = false; S.s.reg.code = ''; S.s.err = ''; S.s.banner = null; },
   's-otp': function () {
-    var r = S.s.reg;
-    var full = OTP.e164('968', r.phone);
+    var r = S.s.reg, sh = S.s;
+    if (sh.busy) return;
     if (!r.sent) {
-      if (r.phone.length !== 8) { S.s.err = r.phone ? 'رقم عُمان لازم يكون 8 أرقام.' : 'اكتب رقم المحل.'; return; }
-      S.s.err = ''; r.sent = true;
-      OTP.send(full).then(function (j) {
-        if (!j.ok) { r.sent = false; S.s.err = OTP.msg(j.error); render(); return; }
-        if (j.demo) setTimeout(function () { if (S.s.view === 'otp') { S.s.banner = 'رمز تأكيد محلك: 0000. اضغط هنا لتعبئته.'; render(); } }, 900);
-        else toast('أرسلنا رسالة فيها الرمز لرقم المحل.');
+      var email = Auth.clean(r.email), bad = Auth.check(email);
+      if (bad) { sh.err = bad === 'empty' ? 'اكتب إيميل المحل.' : Auth.msg(bad); return; }
+      r.email = email; sh.err = ''; sh.busy = true;
+      Auth.send(email).then(function (j) {
+        sh.busy = false;
+        if (!j.ok) { sh.err = Auth.msg(j.error); render(); return; }
+        r.sent = true; r.code = '';
+        if (j.demo) setTimeout(function () { if (S.s.view === 'otp') { S.s.banner = 'رمز التجربة: ' + Auth.DEMO + '. اضغط هنا لتعبئته.'; render(); } }, 900);
+        else toast('أرسلنا رمز على إيميل المحل.');
         render();
       });
       return;
     }
-    if (r.code.length !== 4) { S.s.err = 'اكتب الرمز المكوّن من 4 أرقام.'; return; }
-    OTP.verify(full, r.code).then(function (j) {
-      if (!j.ok) { S.s.err = OTP.msg(j.error || 'wrong'); r.code = ''; render(); return; }
-      A['s-create'](full); render();
+    if (r.code.length < 6) { sh.err = 'اكتب الرمز كامل من الإيميل.'; return; }
+    sh.busy = true; sh.err = '';
+    Auth.verify(r.email, r.code).then(function (j) {
+      sh.busy = false;
+      if (!j.ok) { sh.err = Auth.msg(j.error || 'wrong'); r.code = ''; render(); return; }
+      if (sh.login) A['s-signin'](); else A['s-create']();
+      render();
     });
   },
-  's-create': function (full) {
+  /* signed in by email: open this account's shop */
+  's-signin': function () {
+    var sh = S.s;
+    sh.busy = true;
+    Api.shopSignin().then(function (res) {
+      sh.busy = false;
+      if (res.ok) { myShop = { id: res.data.id, token: res.data.token || null }; LS.set('waynah.shop', myShop); sh.login = false; sh.reg.sent = false; sh.reg.code = ''; sh.banner = null; sh.err = ''; sh.view = 'dash'; Remote.c && Remote.reload('shops'); toast('هلا فيك! دخلت لمحلك.'); }
+      else { sh.reg.sent = false; sh.reg.code = ''; sh.err = Api.errText(res.code, 'signin', 's'); }
+      render();
+    });
+  },
+  's-create': function () {
     var r = S.s.reg, sh = S.s;
     if (sh.busy) return;
     var id = 's' + uid();
     sh.busy = true; sh.err = '';
-    Api.registerShop(id, { name: r.name.trim(), type: r.type, cats: r.cats, brands: r.brands, phone: full, lat: r.loc ? r.loc[0] : 23.6462 + (Math.random() - .5) * .012, lng: r.loc ? r.loc[1] : 58.0992 + (Math.random() - .5) * .014 }).then(function (res) {
+    Api.registerShop(id, { name: r.name.trim(), type: r.type, cats: r.cats, brands: r.brands, cr: r.cr || null, lat: r.loc ? r.loc[0] : 23.6462 + (Math.random() - .5) * .012, lng: r.loc ? r.loc[1] : 58.0992 + (Math.random() - .5) * .014 }).then(function (res) {
       sh.busy = false;
-      if (res.ok) { myShop = { id: res.data.id || id, token: res.data.token || null }; LS.set('waynah.shop', myShop); sh.banner = null; sh.err = ''; sh.view = 'plan'; }
+      if (res.ok) { myShop = { id: res.data.id || id, token: res.data.token || null }; LS.set('waynah.shop', myShop); sh.banner = null; sh.err = ''; sh.reg.sent = false; sh.reg.code = ''; sh.view = res.data.existing ? 'dash' : 'plan'; if (res.data.existing) toast('إيميلك مسجّل بمحل من قبل، دخلناك له.'); }
       else { r.sent = false; r.code = ''; sh.err = Api.errText(res.code, 'register', 's'); }
       render();
     });
   },
-  's-banner': function () { if (S.s.view === 'otp') S.s.reg.code = '0000'; S.s.banner = null; },
+  's-banner': function () { if (S.s.view === 'otp') S.s.reg.code = Auth.DEMO; S.s.banner = null; },
   's-dash': function () { S.s.view = 'dash'; S.s.err = ''; S.s.pickup = ''; },
   's-tab': function (el) { S.s.tab = el.dataset.v; },
-  's-logout': function () { myShop = { id: null }; LS.set('waynah.shop', myShop); S.s.view = 'intro'; S.s.reg = { name: '', type: '', cats: [], brands: [], phone: '', code: '', sent: false, loc: null }; },
+  's-logout': function () { Auth.signOut(); me.uid = null; saveMe(); myShop = { id: null }; LS.set('waynah.shop', myShop); S.s.view = 'intro'; S.s.reg = { name: '', type: '', cats: [], brands: [], cr: '', email: '', code: '', sent: false, loc: null }; S.s.login = false; },
   's-open': function (el) { S.s.rid = el.dataset.id; S.s.offer = { cond: 'أصلي مستعمل', price: '', avail: 'موجودة الحين', note: '', photo: null }; S.s.err = ''; S.s.pickup = ''; S.s.view = 'req'; S._scroll = true; },
   's-cond': function (el) { S.s.offer.cond = el.dataset.v; },
   's-avail': function (el) { S.s.offer.avail = el.dataset.v; },
@@ -2551,9 +2622,15 @@ if (window.Splash) Splash.step(22);
 GL_P.then(function (ok) { if (window.Splash) { Splash.step(74); if (!ok) Splash.done(); } if (!ok) MapCtl.failed = true; render(); });
 Store.init().then(function () {
   if (window.Splash) Splash.step(50);
+  /* email login: the saved session decides who this driver is; without one the next request asks for the email again */
+  Auth.restore().then(function (u) {
+    if (!Store.remote) return;
+    if ((u || null) !== (me.uid || null)) { me.uid = u || null; me.email = u ? Auth.email : ''; saveMe(); render(); }
+    Api.syncMine();
+  });
   if (S.a.unlocked && Store.remote) Api.adminCheck(S.a.secret).then(function (r) { if (!r.ok && r.code !== 'offline' && r.code !== 'unknown') { S.a.unlocked = false; S.a.secret = ''; SS.del('waynah.adm'); render(); } });
   var pending = 3, done = function () { if (--pending <= 0 && !D.ready) { D.ready = true; if (window.Splash && (SNAP_OK || !document.body.classList.contains('mapmode'))) Splash.done(); } render(); };
-  Store.watchCol('requests', function (list) { var before = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; D.requests = list; var after = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; if (after > before && S.d.view === 'offers') { Buddy.jump(); Buddy.say(Buddy.line('got')); if (before === 0) confetti(); } if (S.d.view === 'chat' || S.s.view === 'chat') S._scroll = true; Api.claimLegacy(); done(); });
+  Store.watchCol('requests', function (list) { var before = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; D.requests = list; var after = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; if (after > before && S.d.view === 'offers') { Buddy.jump(); Buddy.say(Buddy.line('got')); if (before === 0) confetti(); } if (S.d.view === 'chat' || S.s.view === 'chat') S._scroll = true; Api.syncMine(); done(); });
   Store.watchCol('shops', function (list) { D.shops = list; done(); });
   Store.watchDoc('config/main', function (c) { D.config = c || { demoShops: true }; done(); });
 });
