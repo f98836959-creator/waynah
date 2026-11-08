@@ -1124,6 +1124,14 @@ window.addEventListener('storage', function (e) { if (e.key === Local.key) Local
 /* Supabase: the real shared database when the page runs on its own site */
 var SB_URL = 'https://sjlqtlmpgypcmylcycpz.supabase.co', SB_KEY = 'sb_publishable_xs-lCc56MS7zlDS3uWYI4Q_5yyyIOdb';
 var num = function (v) { return v == null ? null : Number(v); };
+/* the exact columns the page reads (no phone, no reminded). Phase 2b grants select on these and nothing else */
+var COLS = {
+  requests: 'id,code,car,part,note,tags,photo,status,chosen,final_price,created_at,booked_at,arrived_at,handed_at,review,declined',
+  shops: 'id,name,type,area,cats,brands,plan,created_at,lat,lng',
+  offers: 'request_id,shop_id,shop_name,price,cond,avail,note,img,at,demo,rating,dist',
+  messages: 'id,request_id,shop_id,from_role,text,kind,price,img,flagged,at',
+  config: 'id,demo_shops'
+};
 var Remote = {
   c: null, cache: { requests: [], offers: [], messages: [], shops: [], config: [] }, cbs: { requests: [], shops: [], config: [] }, timers: {},
   init: function () {
@@ -1140,7 +1148,7 @@ var Remote = {
   },
   load: function (t) {
     var self = this;
-    return this.c.from(t).select('*').then(function (res) { if (res.error) { storeErr(res.error); return; } self.cache[t] = res.data || []; });
+    return this.c.from(t).select(COLS[t]).then(function (res) { if (res.error) { storeErr(res.error); return; } self.cache[t] = res.data || []; });
   },
   reload: function (t) {
     var self = this; clearTimeout(this.timers[t]);
@@ -1169,58 +1177,10 @@ var Remote = {
     var tables = key === 'requests' ? ['requests', 'offers', 'messages'] : [key];
     Promise.all(tables.map(function (t) { return self.load(t); })).then(function () { self.emit(tables[0]); });
   },
-  done: function (t) { var self = this; return function (res) { if (res && res.error) { storeErr(res.error); } self.reload(t); }; },
-  set: function (p, d) {
-    var parts = p.split('/'), col = parts[0], id = parts[1];
-    if (col === 'requests') {
-      var row = { id: id, code: d.code, car: d.car, part: d.part, note: d.note || '', tags: d.tags || [], photo: d.photo || null, status: d.status || 'open', chosen: null, final_price: null, created_at: d.createdAt, declined: {}, phone: d.phone || null };
-      this.cache.requests.push(row); this.emit('requests');
-      return this.c.from('requests').insert(row).then(this.done('requests'));
-    }
-    if (col === 'shops') {
-      var srow = { id: id, name: d.name, type: d.type, area: d.area, cats: d.cats || [], brands: d.brands || [], phone_last4: d.phoneLast4 || null, phone: d.phone || null, plan: d.plan || 'founder', created_at: d.createdAt, lat: d.lat || null, lng: d.lng || null };
-      this.cache.shops.push(srow); this.emit('shops');
-      return this.c.from('shops').upsert(srow).then(this.done('shops'));
-    }
-    if (col === 'config') {
-      this.cache.config = [{ id: 'main', demo_shops: !!d.demoShops }]; this.emit('config');
-      return this.c.from('config').update({ demo_shops: !!d.demoShops }).eq('id', 'main').then(this.done('config'));
-    }
-    return Promise.resolve();
-  },
-  merge: function (p, d) {
-    var self = this, id = p.split('/')[1], jobs = [];
-    if (p.indexOf('requests/') !== 0) return Promise.resolve();
-    if (d.offers) Object.keys(d.offers).forEach(function (sid) {
-      var o = d.offers[sid];
-      var row = { request_id: id, shop_id: sid, shop_name: o.shopName, price: o.price, cond: o.cond || null, avail: o.avail || null, note: o.note || null, img: o.img && o.img.length <= 600 ? o.img : null, at: o.at, demo: !!o.demo, rating: o.rating == null ? null : o.rating, dist: o.dist == null ? null : o.dist };
-      self.cache.offers = self.cache.offers.filter(function (x) { return !(x.request_id === id && x.shop_id === sid); }).concat([row]);
-      jobs.push(self.c.from('offers').upsert(row).then(self.done('offers')));
-    });
-    if (d.msgs) Object.keys(d.msgs).forEach(function (mid) {
-      var m = d.msgs[mid];
-      var row = { id: mid, request_id: id, shop_id: m.shopId || null, from_role: m.from, text: m.text || null, kind: m.kind || null, price: m.price == null ? null : m.price, img: m.img && m.img.length <= 600 ? m.img : null, flagged: !!m.flagged, at: m.at };
-      self.cache.messages.push(row);
-      jobs.push(self.c.from('messages').upsert(row).then(self.done('messages')));
-    });
-    var map = { status: 'status', chosen: 'chosen', finalPrice: 'final_price', bookedAt: 'booked_at', arrivedAt: 'arrived_at', handedAt: 'handed_at', review: 'review' };
-    var upd = {};
-    Object.keys(map).forEach(function (k) { if (k in d) upd[map[k]] = d[k]; });
-    var cur = self.cache.requests.filter(function (r) { return r.id === id; })[0];
-    if (d.declined) upd.declined = Object.assign({}, (cur && cur.declined) || {}, d.declined);
-    if (Object.keys(upd).length) {
-      if (cur) Object.assign(cur, upd);
-      jobs.push(self.c.from('requests').update(upd).eq('id', id).then(self.done('requests')));
-    }
-    this.emit('requests');
-    return Promise.all(jobs);
-  },
-  del: function (p) {
-    var parts = p.split('/'), col = parts[0], id = parts[1];
-    if (col !== 'requests' && col !== 'shops') return Promise.resolve();
-    this.cache[col] = this.cache[col].filter(function (x) { return x.id !== id; }); this.emit(col);
-    return this.c.from(col).delete().eq('id', id).then(this.done(col));
-  },
+  /* no direct table writes any more (phase 2). Optimistic helpers only touch the in-memory cache; the real write is an RPC in Api */
+  snap: function (t) { return this.cache[t].map(function (x) { return Object.assign({}, x); }); },
+  undo: function (t, s) { this.cache[t] = s; this.emit(t); },
+  row: function (t, f) { return this.cache[t].filter(f)[0] || null; },
   upload: function (dataUrl) {
     var bin = atob(dataUrl.split(',')[1]), arr = new Uint8Array(bin.length);
     for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
@@ -1314,25 +1274,323 @@ var Store = {
   wait: function (fn) { var self = this; return this.inited ? fn() : this.init().then(function () { return fn(); }); },
   watchDoc: function (p, cb) { if (this.remote) return Remote.watch('config', cb); if (this.db) return this.db.doc(p).onSnapshot(function (s) { cb(s.exists ? s.data() : null); }, function () { toast('انقطع الاتصال بالبيانات. حدّث الصفحة.'); }); return Local.watchDoc(p, cb); },
   watchCol: function (c, cb) { if (this.remote) return Remote.watch(c, cb); if (this.db) return this.db.collection(c).onSnapshot(function (q) { cb(q.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { toast('انقطع الاتصال بالبيانات. حدّث الصفحة.'); }); return Local.watchCol(c, cb); },
-  set: function (p, d) { var self = this; if (!this.inited) return this.wait(function () { return self.set(p, d); }); if (this.remote) return Remote.set(p, d); if (this.db) return this.db.doc(p).set(d).catch(storeErr); Local.set(p, d); return Promise.resolve(); },
-  merge: function (p, d) { var self = this; if (!this.inited) return this.wait(function () { return self.merge(p, d); }); if (this.remote) return Remote.merge(p, d); if (this.db) return this.db.doc(p).update(d).catch(storeErr); Local.merge(p, d); return Promise.resolve(); },
-  del: function (p) { var self = this; if (!this.inited) return this.wait(function () { return self.del(p); }); if (this.remote) return Remote.del(p); if (this.db) return this.db.doc(p).delete().catch(storeErr); Local.del(p); return Promise.resolve(); },
+  set: function (p, d) { var self = this; if (!this.inited) return this.wait(function () { return self.set(p, d); }); if (this.remote) return blocked(p); if (this.db) return this.db.doc(p).set(d).catch(storeErr); Local.set(p, d); return Promise.resolve(); },
+  merge: function (p, d) { var self = this; if (!this.inited) return this.wait(function () { return self.merge(p, d); }); if (this.remote) return blocked(p); if (this.db) return this.db.doc(p).update(d).catch(storeErr); Local.merge(p, d); return Promise.resolve(); },
+  del: function (p) { var self = this; if (!this.inited) return this.wait(function () { return self.del(p); }); if (this.remote) return blocked(p); if (this.db) return this.db.doc(p).delete().catch(storeErr); Local.del(p); return Promise.resolve(); },
   upload: function (dataUrl) { var self = this; if (!this.inited) return this.wait(function () { return self.upload(dataUrl); }); if (this.remote) return Remote.upload(dataUrl).catch(function () { toast('ما قدرنا نرفع الصورة. جرّب مرة ثانية.'); return null; }); return Promise.resolve(dataUrl); }
 };
 function storeErr(e) { try { console.error('[waynah] store error', e); } catch (x) {} var c = e && e.code; toast(c === 'quota_exceeded' ? 'امتلت قاعدة البيانات. امسح الطلبات القديمة من لوحة الفريق.' : 'ما انحفظ. جرّب مرة ثانية.'); }
+
+/* ---------------- safe writes (phase 2): no table is written from this page, every write is an RPC with a token ---------------- */
+function blocked(p) { try { console.warn('[waynah] direct table write blocked:', p); } catch (x) {} return Promise.resolve(); }
+var SS = {
+  get: function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+  set: function (k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} },
+  del: function (k) { try { sessionStorage.removeItem(k); } catch (e) {} }
+};
+var ERR = {
+  unauthorized: 'ما قدرنا نتأكد إن هذا حقك. حدّث الصفحة وجرّب مرة ثانية.',
+  not_found: 'ما لقينا الطلب. يمكن انمسح، حدّث الصفحة.',
+  bad_state: 'حالة الطلب تغيّرت. حدّث الصفحة وشوف وين وصل.',
+  bad_price: 'السعر غير صحيح. اكتب رقم أكبر من صفر.',
+  bad_text: 'النص طويل. اختصره وجرّب.',
+  bad_img: 'ما قدرنا نقبل الصورة. جرّب صورة ثانية.',
+  bad_name: 'اكتب اسم المحل، 80 حرف بالكثير.',
+  bad_phone: 'رقم الجوال غير صحيح.',
+  bad_id: 'صار خطأ بسيط. جرّب مرة ثانية.',
+  bad_list: 'في اختيار ما انقبل. عدّله وجرّب مرة ثانية.',
+  bad_car: 'بيانات السيارة ناقصة. اختر السيارة من جديد.',
+  bad_part: 'اكتب اسم القطعة، 200 حرف بالكثير.',
+  bad_stars: 'اختر عدد النجوم من 1 إلى 5.',
+  bad_code: 'الرقم لازم يكون 4 أرقام.',
+  bad_location: 'الموقع خارج عُمان.',
+  id_taken: 'صار تعارض بسيط. اضغط مرة ثانية.',
+  phone_registered: 'هذا الرقم مسجّل بمحل ثاني.',
+  rate_limited: 'محاولات كثيرة بوقت قصير. انتظر شوي وجرّب.',
+  no_offer: 'ما في عرض من هذا المحل على الطلب.',
+  not_chosen: 'الزبون حجز عند محل ثاني.',
+  already_reviewed: 'قيّمت هذا الطلب من قبل.',
+  already_booked: 'الطلب انحجز، ما تقدر ترفضه الحين.',
+  empty_message: 'اكتب رسالتك أول.',
+  too_many_tokens: 'وصلنا الحد الأقصى من الأجهزة. كلّم فريق وينه.',
+  locked: 'محاولات كثيرة. جرّب بعد شوي.',
+  offline: 'ما في اتصال. جرّب مرة ثانية.'
+};
+/* the same code can mean different things per action or per side (d = driver, s = shop) */
+var ERR_BY = {
+  'book:bad_state': 'الطلب ما عاد مفتوح، يمكن انحجز أو انلغى.',
+  'book:bad_price': 'السعر تغيّر. افتح المحادثة وشوف آخر سعر.',
+  'book:no_offer': 'ما لقينا عرض هذا المحل. حدّث الصفحة.',
+  'cancel:bad_state': 'ما نقدر نلغي الطلب في حالته الحالية.',
+  'arrive:bad_state': 'الحجز مو بحالة تسمح بـ «وصلت». حدّث الصفحة.',
+  'review:bad_state': 'التقييم يفتح بعد ما المحل يأكد التسليم.',
+  'offer:bad_state': 'الطلب ما عاد مفتوح، ما تقدر ترسل عرض.',
+  'message:bad_state': 'الطلب ملغي، ما تقدر ترسل رسالة.',
+  'message:no_offer': 'المحادثة تنفتح بعد ما المحل يرسل عرضه.',
+  'decline:bad_state': 'الزبون ألغى الطلب.',
+  'register:phone_registered': 'هذا الرقم مسجّل بمحل عندنا. لو هذا محلك، كلّم فريق وينه ياخذ لك رابط الدخول.',
+  'deliver:bad_state': 'الحجز مو بحالة التسليم. حدّث الصفحة.',
+  'deliver:not_chosen': 'هذا الحجز مو باسم محلك.',
+  'create:rate_limited': 'طلبت مرات كثيرة بوقت قصير. انتظر شوي وجرّب.',
+  's:unauthorized': 'هذا الجهاز مو مربوط بمحلك. اطلب من فريق وينه رابط دخول جديد.',
+  's:not_found': 'ما لقينا الطلب أو المحل. حدّث الصفحة.',
+  'd:unauthorized': 'ما قدرنا نتأكد إن هذا الطلب حقك. حدّث الصفحة وجرّب مرة ثانية.',
+  'admin:bad_secret': 'السر غلط. هذي اللوحة للفريق بس.',
+  'admin:locked': 'محاولات كثيرة، جرّب بعد 15 دقيقة.',
+  'admin:not_configured': 'اللوحة مقفولة لين المؤسس يحط السر.',
+  'admin:confirm_required': 'لازم تأكيد قبل مسح كل شي.'
+};
+var Api = {
+  claimed: {},
+  errText: function (code, act, who) { return ERR_BY[act + ':' + code] || ERR_BY[who + ':' + code] || ERR[code] || 'صار خطأ. جرّب مرة ثانية.'; },
+  fail: function (r, act, who) { toast(this.errText(r.code, act, who)); return r; },
+  rpc: function (fn, args) {
+    return Store.init().then(function () {
+      if (!Remote.c) return { ok: false, code: 'offline' };
+      return Promise.resolve(Remote.c.rpc(fn, args)).then(function (res) {
+        if (res.error) {
+          var m = String(res.error.message || ''), x = /wn:([a-z_]+)/.exec(m);
+          try { console.warn('[waynah] rpc failed', fn, x ? x[1] : m.slice(0, 80)); } catch (e) {}
+          return { ok: false, code: x ? x[1] : (/fetch|network|load failed/i.test(m) ? 'offline' : 'unknown') };
+        }
+        var d = res.data;
+        if (d && d.ok === false) return { ok: false, code: d.error || 'unknown', data: d };
+        return { ok: true, data: d || {} };
+      });
+    }).catch(function () { return { ok: false, code: 'offline' }; });
+  },
+  /* tokens: the request token (driver) and the shop token come back once, from create_request / register_shop */
+  rt: function (rid) { return (me.tokens && me.tokens[rid]) || null; },
+  st: function () { return myShop.token || null; },
+  keep: function (rid, token, code) { me.tokens = me.tokens || {}; me.codes = me.codes || {}; if (token) me.tokens[rid] = token; if (code) me.codes[rid] = code; saveMe(); },
+  phone: function () {
+    if (me.full) return me.full;
+    if (!me.phone) return null;
+    var c = COUNTRIES.filter(function (x) { return x.iso === me.iso; })[0] || COUNTRIES[0];
+    return OTP.e164(c.dial, me.phone);
+  },
+  /* optimistic edit of the in-memory cache. Returns an undo function */
+  patch: function (rid, fields, msgRow) {
+    var s1 = Remote.snap('requests'), s2 = msgRow ? Remote.snap('messages') : null;
+    var row = Remote.row('requests', function (x) { return x.id === rid; });
+    if (row) Object.assign(row, fields);
+    if (msgRow) Remote.cache.messages.push(msgRow);
+    Remote.emit('requests');
+    return function () { Remote.cache.requests = s1; if (s2) Remote.cache.messages = s2; Remote.emit('requests'); };
+  },
+  ok: function () { return { ok: true, data: {} }; },
+
+  /* ---- driver ---- */
+  createRequest: function (id, doc) {
+    var self = this;
+    if (!Store.remote) { doc.code = newCode(); return Store.set('requests/' + id, doc).then(function () { return self.ok(); }); } /* local/demo mode only */
+    var snap = Remote.snap('requests');
+    Remote.cache.requests.push({ id: id, code: '', car: doc.car, part: doc.part, note: doc.note || '', tags: doc.tags || [], photo: doc.photo || null, status: 'open', chosen: null, final_price: null, created_at: doc.createdAt, declined: {} });
+    Remote.emit('requests');
+    return this.rpc('create_request', { p_car: { brand: doc.car.brand, brandAr: doc.car.brandAr, model: doc.car.model, year: doc.car.year }, p_part: doc.part, p_note: doc.note || '', p_tags: doc.tags || [], p_photo: doc.photo || null, p_phone: doc.phone, p_id: id }).then(function (r) {
+      if (!r.ok) { Remote.undo('requests', snap); return self.fail(r, 'create', 'd'); }
+      var row = Remote.row('requests', function (x) { return x.id === id; });
+      if (row) { row.code = r.data.code; row.created_at = r.data.created_at; }
+      self.keep(id, r.data.token, r.data.code);
+      Remote.emit('requests'); Remote.reload('requests');
+      return r;
+    });
+  },
+  dact: function (rid, action, params, apply) {
+    var self = this, undo = apply ? apply() : null, args = { p_request_id: rid, p_token: this.rt(rid), p_action: action };
+    Object.keys(params || {}).forEach(function (k) { args[k] = params[k]; });
+    return this.rpc('driver_update_request', args).then(function (r) {
+      if (!r.ok) { if (undo) undo(); return self.fail(r, action, 'd'); }
+      Remote.reload('requests'); Remote.reload('messages');
+      return r;
+    });
+  },
+  cancel: function (rid) {
+    var self = this;
+    if (!Store.remote) return Store.merge('requests/' + rid, { status: 'cancelled' }).then(function () { return self.ok(); });
+    return this.dact(rid, 'cancel', null, function () { return self.patch(rid, { status: 'cancelled' }); });
+  },
+  book: function (rid, sid, price) {
+    var self = this;
+    if (!Store.remote) return Store.merge('requests/' + rid, { status: 'booked', chosen: sid, finalPrice: price, bookedAt: now() }).then(function () { return addMsg(rid, { from: 'x', shopId: sid, kind: 'booking', price: price }); }).then(function () { return self.ok(); });
+    var t = now();
+    return this.dact(rid, 'book', { p_shop_id: sid, p_price: price }, function () {
+      return self.patch(rid, { status: 'booked', chosen: sid, final_price: price, booked_at: t }, { id: 'mopt' + uid(), request_id: rid, shop_id: sid, from_role: 'x', text: null, kind: 'booking', price: price, img: null, flagged: false, at: t });
+    });
+  },
+  arrive: function (rid) {
+    var self = this, t = now();
+    if (!Store.remote) return Store.merge('requests/' + rid, { status: 'arrived', arrivedAt: t }).then(function () { return self.ok(); });
+    return this.dact(rid, 'arrive', null, function () { return self.patch(rid, { status: 'arrived', arrived_at: t }); });
+  },
+  review: function (rid, rv) {
+    var self = this, shown = { stars: rv.stars, tags: rv.tags, comment: guard(rv.comment).text, at: now() };
+    if (!Store.remote) return Store.merge('requests/' + rid, { review: shown }).then(function () { return self.ok(); });
+    return this.dact(rid, 'review', { p_stars: rv.stars, p_tags: rv.tags, p_comment: rv.comment }, function () { return self.patch(rid, { review: shown }); });
+  },
+  /* the driver's token goes with every call about a request; legacy requests (no token yet) send null inside the 14-day window */
+  claimLegacy: function () {
+    if (!Store.remote) return;
+    var full = this.phone(); if (!full) return;
+    me.tokens = me.tokens || {};
+    (me.reqs || []).forEach(function (id) {
+      if (me.tokens[id] || (me.claimFailed || {})[id] || Api.claimed[id] || !reqById(id)) return;
+      Api.claimed[id] = true; /* one try per request per visit */
+      Api.rpc('claim_request', { p_request_id: id, p_phone: full }).then(function (r) {
+        if (r.ok) { Api.keep(id, r.data.token, null); return; }
+        if (r.code === 'phone_mismatch' || r.code === 'not_found' || r.code === 'bad_phone') { me.claimFailed = me.claimFailed || {}; me.claimFailed[id] = true; saveMe(); }
+      });
+    });
+  },
+
+  /* ---- messages (m: { text, kind, price, img }; role c = driver, s = shop) ---- */
+  send: function (rid, role, sid, m) {
+    var self = this, g = guard(m.text || ''), id = 'm' + uid();
+    if (!Store.remote) {
+      var lm = { from: role, shopId: sid };
+      if (m.kind) { lm.kind = m.kind; lm.price = m.price; } else lm.text = g.text;
+      if (m.img) lm.img = m.img; if (g.flagged) lm.flagged = true;
+      return addMsg(rid, lm).then(function () { return self.ok(); });
+    }
+    var snap = Remote.snap('messages');
+    Remote.cache.messages.push({ id: id, request_id: rid, shop_id: sid, from_role: role, text: m.kind ? null : g.text, kind: m.kind || null, price: m.kind ? m.price : null, img: m.img || null, flagged: g.flagged, at: now() });
+    Remote.emit('requests');
+    return this.rpc('send_message', { p_request_id: rid, p_token: role === 'c' ? this.rt(rid) : this.st(), p_role: role, p_shop_id: sid, p_text: m.kind ? null : (m.text || ''), p_kind: m.kind || null, p_price: m.kind ? m.price : null, p_img: m.img || null, p_id: id }).then(function (r) {
+      if (!r.ok) { Remote.undo('messages', snap); Remote.emit('requests'); return self.fail(r, 'message', role === 'c' ? 'd' : 's'); }
+      Remote.reload('messages');
+      return r;
+    });
+  },
+
+  /* ---- shop ---- */
+  registerShop: function (id, d) {
+    var self = this;
+    if (!Store.remote) {
+      Store.set('shops/' + id, { name: d.name, type: d.type, area: 'صناعية المعبيلة', cats: d.cats, brands: d.brands, phoneLast4: d.phone.slice(-4), phone: d.phone, plan: 'founder', createdAt: now(), lat: d.lat, lng: d.lng });
+      return Promise.resolve({ ok: true, data: { id: id, token: null } });
+    }
+    return this.rpc('register_shop', { p_name: d.name, p_type: d.type, p_cats: d.cats, p_brands: d.brands, p_phone: d.phone, p_lat: d.lat, p_lng: d.lng, p_id: id }).then(function (r) {
+      if (!r.ok) return r; /* the caller shows the message on the registration screen */
+      Remote.cache.shops.push({ id: r.data.id, name: d.name, type: d.type, area: 'صناعية المعبيلة', cats: d.cats, brands: d.brands, phone_last4: d.phone.slice(-4), plan: 'founder', created_at: r.data.created_at, lat: d.lat, lng: d.lng });
+      Remote.emit('shops'); Remote.reload('shops');
+      return r;
+    });
+  },
+  offer: function (rid, sid, o) {
+    var self = this, t = now();
+    if (!Store.remote) {
+      var x = {}; x[sid] = { shopName: o.shopName, price: o.price, cond: o.cond, avail: o.avail, note: guard(o.note || '').text, img: o.img || null, at: t };
+      return Store.merge('requests/' + rid, { offers: x }).then(function () { return self.ok(); });
+    }
+    var snap = Remote.snap('offers');
+    Remote.cache.offers = Remote.cache.offers.filter(function (z) { return !(z.request_id === rid && z.shop_id === sid); }).concat([{ request_id: rid, shop_id: sid, shop_name: o.shopName, price: o.price, cond: o.cond || null, avail: o.avail || null, note: guard(o.note || '').text || null, img: o.img || null, at: t, demo: false, rating: null, dist: null }]);
+    Remote.emit('offers');
+    return this.rpc('shop_offer', { p_shop_id: sid, p_token: this.st(), p_request_id: rid, p_price: o.price, p_cond: o.cond || null, p_avail: o.avail || null, p_note: o.note || null, p_img: o.img || null }).then(function (r) {
+      if (!r.ok) { Remote.undo('offers', snap); return self.fail(r, 'offer', 's'); }
+      Remote.reload('offers');
+      return r;
+    });
+  },
+  decline: function (rid, sid) {
+    var self = this;
+    if (!Store.remote) { var x = {}; x[sid] = true; return Store.merge('requests/' + rid, { declined: x }).then(function () { return self.ok(); }); }
+    var cur = Remote.row('requests', function (z) { return z.id === rid; }), d = Object.assign({}, (cur && cur.declined) || {}); d[sid] = true;
+    var undo = this.patch(rid, { declined: d });
+    return this.rpc('shop_decline', { p_shop_id: sid, p_token: this.st(), p_request_id: rid }).then(function (r) {
+      if (!r.ok) { undo(); return self.fail(r, 'decline', 's'); }
+      Remote.reload('requests');
+      return r;
+    });
+  },
+  /* the pickup code is checked on the server only. The page never compares it (except in local/demo mode) */
+  confirmDelivery: function (rid, sid, code) {
+    var self = this;
+    if (!Store.remote) {
+      var r0 = reqById(rid);
+      if (!r0 || code !== r0.code) return Promise.resolve({ ok: false, code: 'wrong_code' });
+      return Store.merge('requests/' + rid, { status: 'done', handedAt: now() }).then(function () { return self.ok(); });
+    }
+    return this.rpc('shop_confirm_delivery', { p_shop_id: sid, p_token: this.st(), p_request_id: rid, p_code: code }).then(function (r) {
+      if (r.ok) { self.patch(rid, { status: 'done', handed_at: r.data.handed_at || now() }); Remote.reload('requests'); }
+      return r;
+    });
+  },
+
+  /* ---- demo shops: their offers, replies and delivery are written by the server on the driver's request token ---- */
+  demoCall: function (rid, action, sid, payload, apply) {
+    var undo = apply ? apply() : null;
+    return this.rpc('demo_act', { p_request_id: rid, p_token: this.rt(rid), p_action: action, p_shop_id: sid, p_payload: payload || {} }).then(function (r) {
+      if (!r.ok) { if (undo) undo(); try { console.warn('[waynah] demo skipped:', action, r.code); } catch (e) {} return r; }
+      Remote.reload('offers'); Remote.reload('messages'); Remote.reload('requests');
+      return r;
+    });
+  },
+  demoOffer: function (rid, sh, o) {
+    var self = this;
+    if (!Store.remote) { var x = {}; x[sh.id] = { shopName: o.shopName, price: o.price, cond: o.cond, avail: o.avail, note: o.note, img: o.img, at: now(), demo: true, rating: o.rating, dist: o.dist }; return Store.merge('requests/' + rid, { offers: x }); }
+    return this.demoCall(rid, 'offer', sh.id, o, function () {
+      var snap = Remote.snap('offers');
+      Remote.cache.offers = Remote.cache.offers.filter(function (z) { return !(z.request_id === rid && z.shop_id === sh.id); }).concat([{ request_id: rid, shop_id: sh.id, shop_name: o.shopName, price: o.price, cond: o.cond || null, avail: o.avail || null, note: o.note || null, img: o.img || null, at: now(), demo: true, rating: o.rating, dist: o.dist }]);
+      Remote.emit('offers');
+      return function () { Remote.undo('offers', snap); };
+    });
+  },
+  demoMsg: function (rid, sid, m) {
+    if (!Store.remote) { var lm = { from: 's', shopId: sid }; if (m.text) lm.text = m.text; if (m.kind) { lm.kind = m.kind; lm.price = m.price; } if (m.img) lm.img = m.img; return addMsg(rid, lm); }
+    return this.demoCall(rid, 'message', sid, m, function () {
+      var snap = Remote.snap('messages');
+      Remote.cache.messages.push({ id: 'mopt' + uid(), request_id: rid, shop_id: sid, from_role: 's', text: m.text || null, kind: m.kind || null, price: m.kind ? m.price : null, img: m.img || null, flagged: false, at: now() });
+      Remote.emit('requests');
+      return function () { Remote.cache.messages = snap; Remote.emit('requests'); };
+    });
+  },
+  demoDeliver: function (rid, sid) {
+    var self = this;
+    if (!Store.remote) return Store.merge('requests/' + rid, { status: 'done', handedAt: now() });
+    return this.demoCall(rid, 'deliver', sid, {}, function () { return self.patch(rid, { status: 'done', handed_at: now() }); });
+  },
+
+  /* ---- admin: the secret lives in sessionStorage (this tab only) and goes with every call ---- */
+  adminCheck: function (secret) { return this.rpc('admin_check', { p_secret: secret }); },
+  adminDemo: function (secret, on) {
+    var self = this, snap = Remote.snap('config');
+    Remote.cache.config = [{ id: 'main', demo_shops: !!on }]; Remote.emit('config');
+    return this.rpc('admin_set_demo', { p_secret: secret, p_on: !!on }).then(function (r) {
+      if (!r.ok) Remote.undo('config', snap); else Remote.reload('config');
+      return r;
+    });
+  },
+  adminWipe: function (secret, scope, confirm) {
+    return this.rpc('admin_wipe', { p_secret: secret, p_scope: scope, p_confirm: confirm || null }).then(function (r) {
+      if (r.ok) ['requests', 'offers', 'messages', 'shops'].forEach(function (t) { Remote.reload(t); });
+      return r;
+    });
+  }
+};
 
 var D = { requests: [], shops: [], config: { demoShops: true }, ready: false };
 
 /* ---------------- state ---------------- */
 var me = LS.get('waynah.me', { verified: false, phone: '', iso: detectCountry(), car: { brand: 'toyota', brandAr: 'تويوتا', model: 'لاندكروزر', year: 2019 }, reqs: [] });
+me.tokens = me.tokens || {}; me.codes = me.codes || {}; /* request tokens + pickup codes, kept per request id (phase 2) */
 var myShop = LS.get('waynah.shop', { id: null });
+/* a shop opening its sign-in link (#shop&id=..&t=..): keep id + token, then clean the address bar */
+(function () {
+  try {
+    var h = location.hash || ''; if (h.indexOf('#shop&') !== 0) return;
+    var p = {}; h.slice(1).split('&').slice(1).forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+    if (/^[A-Za-z0-9_-]{3,40}$/.test(p.id || '') && /^[0-9a-f]{48}$/.test(p.t || '')) { myShop = { id: p.id, token: p.t }; LS.set('waynah.shop', myShop); }
+    history.replaceState(null, '', location.pathname + location.search + '#shop');
+  } catch (e) {}
+})();
+var admSaved = SS.get('waynah.adm') || ''; /* admin secret: this tab only (sessionStorage), never localStorage */
 var S = {
   d: { view: 'welcome', cat: null, more: false, pending: false, step: 'phone', phone: '', code: '', err: '', banner: null, picker: false, pq: '', sheet: false, cs: { step: 'brand', brand: null, model: null, q: '' }, part: '', photo: null, tags: [], note: '', rid: null, sid: null, sort: 'cheap', draft: '', stars: 0, rtags: [], comment: '' },
   s: { view: myShop.id ? 'dash' : 'intro', reg: { name: '', type: '', cats: [], brands: [], phone: '', code: '', sent: false, loc: null }, err: '', rid: null, offer: { cond: 'أصلي مستعمل', price: '', avail: 'موجودة الحين', note: '', photo: null }, draft: '', pickup: '', banner: null, tab: 'new' },
-  a: { unlocked: false, role: 'CEO', email: '', pin: '', err: '', tab: 'overview', sel: null, confirm: false }
+  a: { unlocked: !!admSaved, role: 'CEO', secret: admSaved, busy: false, err: '', tab: 'overview', sel: null, confirm: false }
 };
 var saveMe = function () { LS.set('waynah.me', me); };
-var route = function () { var h = (location.hash || '').replace('#', ''); return h === 'shop' || h === 'admin' ? h : 'driver'; };
+var route = function () { var h = (location.hash || '').replace('#', '').split('&')[0]; return h === 'shop' || h === 'admin' ? h : 'driver'; };
 
 /* ---------------- toast / banner ---------------- */
 var toastT = null;
@@ -1587,7 +1845,7 @@ var Driver = {
       '<div class="ocard"><div class="row xs" style="justify-content:space-between"><b style="color:var(--accent)">عرض سعر</b><span class="muted">ثابت 7 أيام</span></div><div class="price num" style="font-size:24px;font-weight:700">' + fmt(offer.price) + ' ر.ع</div><div class="xs muted">' + esc((offer.cond || '') + ' · ' + (offer.avail || '')) + '</div>' + (offer.note ? '<div class="small">«' + esc(offer.note) + '»</div>' : '') + (!lastOffer && !bookedHere ? '<button class="btn btn-primary btn-sm btn-block" style="margin-top:8px" data-act="d-book" data-price="' + offer.price + '">احجز بهذا السعر</button>' : '') + '</div>' +
       ms.map(function (m) {
         if (m.kind === 'offer') return '<div class="ocard"><div class="row xs" style="justify-content:space-between"><b style="color:var(--accent)">سعر جديد</b><span class="muted">' + ago(m.at) + '</span></div><div class="num" style="font-size:24px;font-weight:700">' + fmt(m.price) + ' ر.ع</div>' + (m === lastOffer && !bookedHere ? '<button class="btn btn-primary btn-sm btn-block" style="margin-top:8px" data-act="d-book" data-price="' + m.price + '">احجز بهذا السعر</button>' : '') + '</div>';
-        if (m.kind === 'booking') return '<div class="b sys pop" style="background:var(--primary);color:var(--on-primary);font-size:13px">تم الحجز · ' + fmt(m.price) + ' ر.ع · صالح 7 أيام</div>';
+        if (m.kind === 'booking') return '<div class="b sys pop" style="background:var(--primary);color:var(--on-primary);font-size:13px">تم الحجز · ' + fmt(m.price != null ? m.price : r.finalPrice) + ' ر.ع · صالح 7 أيام</div>';
         var cls = m.from === 'c' ? 'me' : m.from === 'x' ? 'sys' : 'them';
         return '<div class="b ' + cls + '">' + esc(m.text) + (m.img ? '<img src="' + esc(m.img) + '" alt="صورة">' : '') + '<span class="meta">' + ago(m.at) + '</span></div>';
       }).join('') + (S.d.typing ? '<div class="b them"><span class="dots"><i></i><i></i><i></i></span></div>' : '') + '<span id="chatEnd"></span>';
@@ -1659,7 +1917,7 @@ var Shop = {
   me: function () { return D.shops.filter(function (s) { return s.id === myShop.id; })[0] || null; },
   view: function () {
     var s = S.s, shop = this.me();
-    if (myShop.id && !shop && D.ready && s.view !== 'intro' && s.view !== 'reg' && s.view !== 'otp' && s.view !== 'plan') { myShop.id = null; LS.set('waynah.shop', myShop); s.view = 'intro'; }
+    if (myShop.id && !shop && D.ready && s.view !== 'intro' && s.view !== 'reg' && s.view !== 'otp' && s.view !== 'plan') { myShop = { id: null }; LS.set('waynah.shop', myShop); s.view = 'intro'; }
     var v = { intro: this.intro, reg: this.reg, otp: this.otp, plan: this.plan, dash: this.dash, req: this.req, chat: this.chat, bookings: this.bookings }[s.view] || this.dash;
     var out = '<div class="app v-' + s.view + '">' + v.call(this) + '</div>';
     if (s.banner) out += '<button class="banner" data-act="s-banner"><img src="' + IMG.head + '" alt=""><span class="grow"><span class="xs muted" style="display:flex;justify-content:space-between"><b style="color:var(--fg)">وينه للأعمال</b><span>الحين</span></span><span class="small">' + esc(s.banner) + '</span></span></button>';
@@ -1752,7 +2010,7 @@ var Shop = {
       '<div class="ocard" style="align-self:flex-start"><b class="xs" style="color:var(--accent)">عرضك</b><div class="num" style="font-size:22px;font-weight:700">' + fmt(my.price) + ' ر.ع</div><div class="xs muted">' + esc((my.cond || '') + ' · ' + (my.avail || '')) + '</div></div>' +
       ms.map(function (m) {
         if (m.kind === 'offer') return '<div class="ocard" style="align-self:flex-start"><b class="xs" style="color:var(--accent)">سعر جديد منك</b><div class="num" style="font-size:22px;font-weight:700">' + fmt(m.price) + ' ر.ع</div></div>';
-        if (m.kind === 'booking') return '<div class="b sys" style="background:var(--primary);color:var(--on-primary)">الزبون حجز · ' + fmt(m.price) + ' ر.ع</div>';
+        if (m.kind === 'booking') return '<div class="b sys" style="background:var(--primary);color:var(--on-primary)">الزبون حجز · ' + fmt(m.price != null ? m.price : r.finalPrice) + ' ر.ع</div>';
         var cls = m.from === 's' ? 'me' : m.from === 'x' ? 'sys' : 'them';
         return '<div class="b ' + cls + '">' + esc(m.text) + (m.img ? '<img src="' + esc(m.img) + '" alt="">' : '') + '<span class="meta">' + ago(m.at) + (m.flagged ? ' · تم إخفاء رقم' : '') + '</span></div>';
       }).join('') + '<span id="chatEnd"></span>';
@@ -1772,9 +2030,8 @@ var Admin = {
     var a = S.a, roles = [['CEO', 'الرئيس التنفيذي'], ['COO', 'العمليات'], ['CMO', 'التسويق'], ['CSO', 'المبيعات'], ['CFO', 'المالية'], ['CHRO', 'الموارد البشرية']];
     return '<form class="card stack" data-form="a-unlock" style="max-width:440px;margin:20px auto"><div class="row"><img src="' + IMG.head + '" alt="" style="width:60px;height:60px;border-radius:30px;background:var(--surface2);object-fit:contain"><div><div class="xs" style="color:var(--accent);font-weight:700">دخول الفريق فقط</div><h1 style="font-size:23px">لوحة تحكم وينه</h1></div></div>' +
       '<span class="label" style="margin:0">منصبك</span><div class="grid3">' + roles.map(function (r) { var on = a.role === r[0]; return '<button type="button" class="tile' + (on ? ' sel' : '') + '" style="min-height:56px" data-act="a-role" data-v="' + r[0] + '" aria-pressed="' + on + '"><span class="en" style="font-size:13px">' + r[0] + '</span><span class="xs">' + r[1] + '</span></button>'; }).join('') + '</div>' +
-      '<div><label class="label" for="a-email">البريد</label><input id="a-email" class="input ltr" type="email" placeholder="team@waynah.om" value="' + esc(a.email) + '" data-bind="a.email"></div>' +
-      '<div><label class="label" for="a-pin">رمز الدخول</label><input id="a-pin" class="input ltr" style="text-align:center;letter-spacing:.4em" type="password" inputmode="numeric" maxlength="4" value="' + esc(a.pin) + '" data-bind="a.pin" data-digits="4"></div>' +
-      (a.err ? '<p class="err" role="alert">' + esc(a.err) + '</p>' : '') + '<button class="btn btn-primary btn-lg" type="submit">ادخل</button><p class="xs muted" style="text-align:center;margin:0">تجريبي: أي بريد، والرمز 0000. هذا الرمز للعرض فقط وما يحمي البيانات.</p></form>';
+      '<div><label class="label" for="a-secret">سر الدخول</label><input id="a-secret" class="input ltr" style="text-align:center" type="password" autocomplete="off" value="' + esc(a.secret) + '" data-bind="a.secret"></div>' +
+      (a.err ? '<p class="err" role="alert">' + esc(a.err) + '</p>' : '') + '<button class="btn btn-primary btn-lg" type="submit"' + (a.busy ? ' disabled' : '') + '>' + (a.busy ? 'لحظة…' : 'ادخل') + '</button></form>';
   },
   stats: function () {
     var R = D.requests, n = R.length;
@@ -1841,7 +2098,7 @@ var Admin = {
       (sel.flagged ? '<div class="flag"><b>تنبيه تلقائي:</b> في رسالة فيها رقم جوال أو محاولة تواصل خارج التطبيق. النظام خبّى الرقم.</div>' : '') +
       '<div class="chat" style="min-height:0;background:var(--bg);border-radius:14px;padding:12px">' +
       '<div class="b me">' + esc('طلب: ' + sel.r.part) + '</div><div class="b sys">عرض ' + fmt(sel.o.price) + ' ر.ع · ' + esc(sel.o.cond) + '</div>' +
-      sel.ms.map(function (m) { if (m.kind === 'offer') return '<div class="b sys">سعر جديد ' + fmt(m.price) + ' ر.ع</div>'; if (m.kind === 'booking') return '<div class="b sys">تم الحجز · ' + fmt(m.price) + ' ر.ع</div>'; return '<div class="b ' + (m.from === 'c' ? 'me' : 'them') + '">' + esc(m.text) + '<span class="meta">' + (m.from === 'c' ? 'الزبون' : 'المحل') + ' · ' + ago(m.at) + (m.flagged ? ' · مبلّغ' : '') + '</span></div>'; }).join('') + '</div>' +
+      sel.ms.map(function (m) { if (m.kind === 'offer') return '<div class="b sys">سعر جديد ' + fmt(m.price) + ' ر.ع</div>'; if (m.kind === 'booking') return '<div class="b sys">تم الحجز · ' + fmt(m.price != null ? m.price : sel.r.finalPrice) + ' ر.ع</div>'; return '<div class="b ' + (m.from === 'c' ? 'me' : 'them') + '">' + esc(m.text) + '<span class="meta">' + (m.from === 'c' ? 'الزبون' : 'المحل') + ' · ' + ago(m.at) + (m.flagged ? ' · مبلّغ' : '') + '</span></div>'; }).join('') + '</div>' +
       '<p class="xs muted" style="margin:0">الأرقام مخفية. الفريق يفتح المحادثات للجودة وحل البلاغات فقط.</p>' : '';
     return '<div class="two"><section class="card stack" style="flex:1 1 280px;gap:8px">' + list + '</section><section class="card stack" style="flex:999 1 420px">' + detail + '</section></div>';
   },
@@ -1849,7 +2106,8 @@ var Admin = {
     var a = S.a, on = D.config.demoShops !== false;
     return '<section class="card stack"><h2 style="font-size:17px">المحلات التجريبية</h2><p class="small muted" style="margin:0">لما تكون شغّالة، 3 محلات وهمية ترد على أي طلب جديد خلال ثواني، وترد في المحادثة، وتأكد التسليم. مفيدة للتجربة بروحك. طفّها لما تختبر مع محلات حقيقية.</p>' +
       '<button class="btn ' + (on ? 'btn-primary' : '') + '" data-act="a-demo" aria-pressed="' + on + '" style="align-self:flex-start">' + (on ? 'شغّالة · اضغط للإيقاف' : 'موقفة · اضغط للتشغيل') + '</button></section>' +
-      '<section class="card stack"><h2 style="font-size:17px">امسح بيانات التجربة</h2><p class="small muted" style="margin:0">يمسح كل الطلبات والمحادثات والمحلات المسجلة. ما ينرد.</p>' +
+      '<section class="card stack"><h2 style="font-size:17px">امسح بيانات التجربة</h2><p class="small muted" style="margin:0">الأول يمسح طلبات الاختبار بس: كل طلب القطعة فيه كلمة «اختبار»، بعروضه ومحادثاته. ما ينرد.</p><button class="btn" style="align-self:flex-start" data-act="a-wipe-test">امسح طلبات الاختبار</button>' +
+      '<p class="small muted" style="margin:8px 0 0">الزر اللي تحت يمسح كل الطلبات والمحادثات والمحلات المسجلة، مو بس الاختبار. ما ينرد.</p>' +
       (a.confirm ? '<div class="row wrap"><button class="btn" style="background:var(--bad);color:#fff;border-color:var(--bad)" data-act="a-wipe">أكيد، امسح كل شي</button><button class="btn" data-act="a-wipe-cancel">لا، رجوع</button></div>' : '<button class="btn" style="align-self:flex-start;color:var(--bad)" data-act="a-wipe-ask">امسح البيانات</button>') + '</section>';
   }
 };
@@ -1872,8 +2130,7 @@ function runDemoShops(rid, part) {
     setTimeout(function () {
       var r = reqById(rid); if (!r || r.status !== 'open') return;
       var v = k[1] * sh.mult; var price = v < 10 ? Math.round(v * 2) / 2 : Math.round(v);
-      var o = {}; o[sh.id] = { shopName: sh.name, price: price, cond: sh.cond, avail: sh.avail, note: sh.note, img: k[0] ? IMG[k[0]] : null, at: now(), demo: true, rating: sh.rating, dist: sh.dist };
-      Store.merge('requests/' + rid, { offers: o });
+      Api.demoOffer(rid, sh, { shopName: sh.name, price: price, cond: sh.cond, avail: sh.avail, note: sh.note, img: k[0] ? IMG[k[0]] : null, rating: sh.rating, dist: sh.dist });
     }, sh.delay);
   });
 }
@@ -1885,18 +2142,17 @@ function demoReply(rid, sid, text) {
     var r = reqById(rid); if (!r) return render();
     var o = (r.offers || {})[sid] || {};
     var ms = msgsOf(r, sid), last = o.price; ms.forEach(function (m) { if (m.kind === 'offer') last = m.price; });
-    if (/سعر|تنزل|آخر|اخر|خصم|غالي/.test(text) && r.status === 'open') { var np = Math.max(1, Math.round(last * 0.93)); addMsg(rid, { from: 's', shopId: sid, text: 'عشانك، آخر سعر ' + np + '.' }).then(function () { return addMsg(rid, { from: 's', shopId: sid, kind: 'offer', price: np }); }); }
-    else if (/صور/.test(text)) addMsg(rid, { from: 's', shopId: sid, text: 'أكيد، هذي صورة ثانية.', img: o.img || IMG.engine });
-    else if (/وين|موقع|مكان/.test(text)) addMsg(rid, { from: 's', shopId: sid, text: 'المحل في صناعية المعبيلة. لما تحجز يطلع لك الموقع.' });
-    else addMsg(rid, { from: 's', shopId: sid, text: r.status === 'open' ? 'حياك، القطعة جاهزة. تبيني أحجزها لك؟' : 'حياك، المحل مفتوح لين 10 الليل.' });
+    if (/سعر|تنزل|آخر|اخر|خصم|غالي/.test(text) && r.status === 'open') { var np = Math.max(1, Math.round(last * 0.93)); Api.demoMsg(rid, sid, { text: 'عشانك، آخر سعر ' + np + '.' }).then(function () { return Api.demoMsg(rid, sid, { kind: 'offer', price: np }); }); }
+    else if (/صور/.test(text)) Api.demoMsg(rid, sid, { text: 'أكيد، هذي صورة ثانية.', img: o.img || IMG.engine });
+    else if (/وين|موقع|مكان/.test(text)) Api.demoMsg(rid, sid, { text: 'المحل في صناعية المعبيلة. لما تحجز يطلع لك الموقع.' });
+    else Api.demoMsg(rid, sid, { text: r.status === 'open' ? 'حياك، القطعة جاهزة. تبيني أحجزها لك؟' : 'حياك، المحل مفتوح لين 10 الليل.' });
     S._scroll = true; render();
   }, 1500);
 }
 function driverSend(text) {
   var d = S.d; text = (text || '').trim(); if (!text) return;
   var g = guard(text);
-  var cm = { from: 'c', shopId: d.sid, text: g.text }; if (g.flagged) cm.flagged = true;
-  addMsg(d.rid, cm);
+  Api.send(d.rid, 'c', d.sid, { text: text }); /* the server hides numbers and flags the message too */
   if (g.flagged) toast('خبّينا الرقم. كل التواصل لازم يكون داخل وينه.');
   d.draft = ''; S._scroll = true;
   if (d.sid.indexOf('demo-') === 0) demoReply(d.rid, d.sid, text);
@@ -1905,12 +2161,27 @@ function driverSend(text) {
 function shopSend(text) {
   var s = S.s; text = (text || '').trim(); if (!text) return;
   var g = guard(text);
-  var sm = { from: 's', shopId: myShop.id, text: g.text }; if (g.flagged) sm.flagged = true;
-  addMsg(s.rid, sm);
+  Api.send(s.rid, 's', myShop.id, { text: text });
   if (g.flagged) toast('خبّينا الرقم. التواصل مع الزبون داخل وينه بس.');
   s.draft = ''; S._scroll = true; render();
 }
 
+/* one admin call: sends the secret from this tab, and locks the panel if the server says the secret is wrong or locked */
+function adminDo(call, okFn) {
+  var a = S.a;
+  if (!Store.remote) { toast('اللوحة تشتغل على الموقع الحي بس.'); return; }
+  if (a.busy) return;
+  a.busy = true;
+  call(a.secret).then(function (r) {
+    a.busy = false;
+    if (r.ok) { if (okFn) okFn(r); }
+    else {
+      toast(Api.errText(r.code, 'admin', 'admin'));
+      if (r.code === 'bad_secret' || r.code === 'locked' || r.code === 'not_configured') { a.unlocked = false; a.secret = ''; SS.del('waynah.adm'); }
+    }
+    render();
+  });
+}
 var A = {
   'push-on': function (el) {
     if (Push.busy) return false;
@@ -1978,34 +2249,43 @@ var A = {
     var d = S.d; if (!d.part.trim()) { d.err = 'اختر قسم أو اكتب اسم القطعة أول.'; return; }
     if (!me.verified) { d.pending = true; d.view = 'login'; d.step = 'phone'; d.err = ''; return; }
     d.pending = false;
-    var id = 'r' + uid(), code = newCode();
-    var doc = { code: code, car: me.car, part: d.part.trim(), note: d.note.trim(), tags: d.tags.slice(), photo: d.photo || null, status: 'open', createdAt: now(), offers: {}, msgs: {}, chosen: null, finalPrice: null, declined: {}, phone: me.full || null };
-    Store.set('requests/' + id, doc).then(function () { runDemoShops(id, doc.part); });
+    var id = 'r' + uid();
+    var doc = { car: me.car, part: d.part.trim(), note: d.note.trim(), tags: d.tags.slice(), photo: d.photo || null, status: 'open', createdAt: now(), offers: {}, msgs: {}, chosen: null, finalPrice: null, declined: {}, phone: Api.phone() };
+    Api.createRequest(id, doc).then(function (r) {
+      if (r.ok) { runDemoShops(id, doc.part); return; }
+      me.reqs = me.reqs.filter(function (x) { return x !== id; }); saveMe();
+      if (S.d.rid === id) { S.d.rid = null; S.d.view = 'part'; S.d.part = doc.part; S.d.note = doc.note; S.d.tags = doc.tags; S.d.photo = doc.photo; }
+      render();
+    });
     me.reqs = [id].concat(me.reqs).slice(0, 30); saveMe();
     d.rid = id; d.view = 'offers'; d.part = ''; d.cat = null; d.more = false; d.photo = null; d.tags = []; d.note = ''; d.err = ''; d.sort = 'cheap'; Buddy.say(Buddy.line('offers'));
   },
   'd-open': function (el) { var r = reqById(el.dataset.id); S.d.rid = el.dataset.id; S.d.sid = r && r.chosen; S.d.view = r && r.chosen && r.status !== 'open' ? 'booked' : 'offers'; },
   'd-sort': function (el) { S.d.sort = { 'الأرخص': 'cheap', 'الأقرب': 'near', 'الأعلى تقييم': 'rate' }[el.dataset.v]; },
-  'd-cancel': function (el) { Store.merge('requests/' + el.dataset.id, { status: 'cancelled' }); S.d.view = 'home'; toast('ألغينا الطلب.'); },
+  'd-cancel': function (el) { Api.cancel(el.dataset.id).then(function (r) { if (r.ok) toast('ألغينا الطلب.'); render(); }); S.d.view = 'home'; },
   'd-offers': function () { S.d.view = 'offers'; },
   'd-choose': function (el) { S.d.sid = el.dataset.sid; S.d.view = 'chat'; S.d.draft = ''; S._scroll = true; Buddy.say(Buddy.line('chat')); },
   'd-quick': function (el) { driverSend(el.dataset.v); return false; },
   'd-book': function (el) {
     var d = S.d, price = Number(el.dataset.price), r = reqById(d.rid); if (!r || r.status !== 'open') return;
-    Store.merge('requests/' + d.rid, { status: 'booked', chosen: d.sid, finalPrice: price, bookedAt: now() }).then(function () { return addMsg(d.rid, { from: 'x', shopId: d.sid, kind: 'booking', price: price }); });
-    toast('تم الحجز. رقم حجزك W-' + r.code); S._scroll = true; confetti(); Buddy.say(Buddy.line('booked'));
+    var rid = d.rid, sid = d.sid, code = r.code;
+    Api.book(rid, sid, price).then(function (res) { if (res.ok) { toast('تم الحجز. رقم حجزك W-' + code); S._scroll = true; confetti(); Buddy.say(Buddy.line('booked')); } render(); });
   },
   'd-booked': function () { S.d.view = 'booked'; },
   'd-chat': function () { var r = reqById(S.d.rid); S.d.sid = (r && r.chosen) || S.d.sid; S.d.view = 'chat'; S._scroll = true; },
   'd-arrived': function () {
     var d = S.d, r = reqById(d.rid); if (!r) return;
-    Store.merge('requests/' + d.rid, { status: 'arrived', arrivedAt: now() });
-    if (r.chosen && r.chosen.indexOf('demo-') === 0) setTimeout(function () { Store.merge('requests/' + d.rid, { status: 'done', handedAt: now() }); S.d.banner = 'المحل أكّد إنك استلمت قطعتك. كيف كانت التجربة؟'; render(); setTimeout(function () { S.d.banner = null; render(); }, 7000); }, 4000);
+    var rid = d.rid, chosen = r.chosen;
+    Api.arrive(rid).then(function (res) {
+      render();
+      if (!res.ok || !chosen || chosen.indexOf('demo-') !== 0) return;
+      setTimeout(function () { Api.demoDeliver(rid, chosen).then(function (x) { if (x && x.ok === false) return; S.d.banner = 'المحل أكّد إنك استلمت قطعتك. كيف كانت التجربة؟'; render(); setTimeout(function () { S.d.banner = null; render(); }, 7000); }); }, 4000);
+    });
   },
   'd-review': function () { Buddy.say(Buddy.line('done')); S.d.view = 'review'; S.d.stars = 0; S.d.rtags = []; S.d.comment = ''; S.d.err = ''; S.d.banner = null; },
   'd-star': function (el) { S.d.stars = Number(el.dataset.v); S.d.err = ''; },
   'd-rtag': function (el) { var t = S.d.rtags, v = el.dataset.v; S.d.rtags = t.indexOf(v) >= 0 ? t.filter(function (x) { return x !== v; }) : t.concat([v]); },
-  'd-send-review': function () { var d = S.d; if (!d.stars) { d.err = 'اختر عدد النجوم.'; return; } Store.merge('requests/' + d.rid, { review: { stars: d.stars, tags: d.rtags, comment: guard(d.comment.trim()).text, at: now() } }); d.view = 'thanks'; confetti(); Buddy.say(Buddy.line('thanks')); },
+  'd-send-review': function () { var d = S.d; if (!d.stars) { d.err = 'اختر عدد النجوم.'; return; } var rid = d.rid; Api.review(rid, { stars: d.stars, tags: d.rtags.slice(), comment: d.comment.trim() }).then(function (res) { if (!res.ok && res.code !== 'already_reviewed' && S.d.rid === rid && S.d.view === 'thanks') S.d.view = 'review'; render(); }); d.view = 'thanks'; confetti(); Buddy.say(Buddy.line('thanks')); },
   /* shop */
   's-intro': function () { S.s.view = 'intro'; S.s.err = ''; },
   's-reg': function () { S.s.view = 'reg'; S.s.err = ''; },
@@ -2034,43 +2314,63 @@ var A = {
     });
   },
   's-create': function (full) {
-    var r = S.s.reg;
+    var r = S.s.reg, sh = S.s;
+    if (sh.busy) return;
     var id = 's' + uid();
-    Store.set('shops/' + id, { name: r.name.trim(), type: r.type, area: 'صناعية المعبيلة', cats: r.cats, brands: r.brands, phoneLast4: r.phone.slice(-4), phone: full, plan: 'founder', createdAt: now(), lat: r.loc ? r.loc[0] : 23.6462 + (Math.random() - .5) * .012, lng: r.loc ? r.loc[1] : 58.0992 + (Math.random() - .5) * .014 });
-    myShop.id = id; LS.set('waynah.shop', myShop); S.s.banner = null; S.s.err = ''; S.s.view = 'plan';
+    sh.busy = true; sh.err = '';
+    Api.registerShop(id, { name: r.name.trim(), type: r.type, cats: r.cats, brands: r.brands, phone: full, lat: r.loc ? r.loc[0] : 23.6462 + (Math.random() - .5) * .012, lng: r.loc ? r.loc[1] : 58.0992 + (Math.random() - .5) * .014 }).then(function (res) {
+      sh.busy = false;
+      if (res.ok) { myShop = { id: res.data.id || id, token: res.data.token || null }; LS.set('waynah.shop', myShop); sh.banner = null; sh.err = ''; sh.view = 'plan'; }
+      else { r.sent = false; r.code = ''; sh.err = Api.errText(res.code, 'register', 's'); }
+      render();
+    });
   },
   's-banner': function () { if (S.s.view === 'otp') S.s.reg.code = '0000'; S.s.banner = null; },
   's-dash': function () { S.s.view = 'dash'; S.s.err = ''; S.s.pickup = ''; },
   's-tab': function (el) { S.s.tab = el.dataset.v; },
-  's-logout': function () { myShop.id = null; LS.set('waynah.shop', myShop); S.s.view = 'intro'; S.s.reg = { name: '', type: '', cats: [], brands: [], phone: '', code: '', sent: false, loc: null }; },
+  's-logout': function () { myShop = { id: null }; LS.set('waynah.shop', myShop); S.s.view = 'intro'; S.s.reg = { name: '', type: '', cats: [], brands: [], phone: '', code: '', sent: false, loc: null }; },
   's-open': function (el) { S.s.rid = el.dataset.id; S.s.offer = { cond: 'أصلي مستعمل', price: '', avail: 'موجودة الحين', note: '', photo: null }; S.s.err = ''; S.s.pickup = ''; S.s.view = 'req'; S._scroll = true; },
   's-cond': function (el) { S.s.offer.cond = el.dataset.v; },
   's-avail': function (el) { S.s.offer.avail = el.dataset.v; },
   's-photo-del': function () { S.s.offer.photo = null; },
   's-send-offer': function () {
-    var s = S.s, o = s.offer, shop = Shop.me(), price = Number(o.price);
+    var s = S.s, o = s.offer, shop = Shop.me(), price = Math.round(Number(o.price) * 1000) / 1000;
     if (!price) { s.err = 'اكتب السعر بالأرقام.'; return; }
-    var g = guard(o.note.trim());
-    var x = {}; x[shop.id] = { shopName: shop.name, price: price, cond: o.cond, avail: o.avail, note: g.text, img: o.photo || null, at: now() };
-    Store.merge('requests/' + s.rid, { offers: x }); s.err = ''; s.view = 'chat'; toast('وصل عرضك للزبون.');
+    var rid = s.rid;
+    Api.offer(rid, shop.id, { shopName: shop.name, price: price, cond: o.cond, avail: o.avail, note: o.note.trim(), img: o.photo || null }).then(function (res) {
+      if (res.ok) { toast('وصل عرضك للزبون.'); return; }
+      if (S.s.rid === rid && S.s.view === 'chat') S.s.view = 'req';
+      render();
+    });
+    s.err = ''; s.view = 'chat';
   },
-  's-decline': function () { var x = {}; x[myShop.id] = true; Store.merge('requests/' + S.s.rid, { declined: x }); S.s.view = 'dash'; toast('تمام، شلنا الطلب من قائمتك.'); },
+  's-decline': function () { Api.decline(S.s.rid, myShop.id).then(function (res) { if (res.ok) toast('تمام، شلنا الطلب من قائمتك.'); render(); }); S.s.view = 'dash'; },
   's-quick': function (el) { shopSend(el.dataset.v); return false; },
-  's-newprice': function () { var p = Number(S.s.draft); if (!p) { toast('اكتب السعر الجديد في خانة الرسالة، وبعدين اضغط «اقترح سعر جديد».'); return false; } addMsg(S.s.rid, { from: 's', shopId: myShop.id, kind: 'offer', price: p }); S.s.draft = ''; S._scroll = true; },
+  's-newprice': function () { var p = Number(S.s.draft); if (!p) { toast('اكتب السعر الجديد في خانة الرسالة، وبعدين اضغط «اقترح سعر جديد».'); return false; } Api.send(S.s.rid, 's', myShop.id, { kind: 'offer', price: Math.round(p * 1000) / 1000 }); S.s.draft = ''; S._scroll = true; },
   's-handover': function () {
     var s = S.s, r = reqById(s.rid); if (!r) return;
-    if (s.pickup !== r.code) { s.err = 'الرقم ما يطابق. تأكد من شاشة الزبون.'; s.pickup = ''; return; }
-    Store.merge('requests/' + s.rid, { status: 'done', handedAt: now() }); s.err = ''; s.pickup = ''; toast('تم التسليم. انفتح التقييم للزبون.');
+    if (s.busy) return;
+    if ((s.pickup || '').length !== 4) { s.err = 'اكتب الرقم المكوّن من 4 أرقام.'; return; }
+    var code = s.pickup, rid = s.rid; s.busy = true; s.err = '';
+    Api.confirmDelivery(rid, myShop.id, code).then(function (res) { /* the server compares the code, not the page */
+      s.busy = false;
+      if (res.ok) { s.err = ''; s.pickup = ''; toast('تم التسليم. انفتح التقييم للزبون.'); }
+      else if (res.code === 'wrong_code') { var left = res.data && res.data.left; s.err = 'الرقم ما يطابق. تأكد من شاشة الزبون.' + (left > 0 ? ' باقي لك ' + left + ' محاولات.' : left === 0 ? ' ما باقي لك محاولات، جرّب بعد نص ساعة.' : ''); s.pickup = ''; }
+      else if (res.code === 'locked') { s.err = 'قفلنا المحاولات على هذا الطلب مؤقتاً. جرّب بعد نص ساعة.'; s.pickup = ''; }
+      else s.err = Api.errText(res.code, 'deliver', 's');
+      render();
+    });
   },
   /* admin */
   'a-role': function (el) { S.a.role = el.dataset.v; },
   'a-tab': function (el) { S.a.tab = el.dataset.v; S.a.confirm = false; },
-  'a-lock': function () { S.a.unlocked = false; S.a.pin = ''; },
+  'a-lock': function () { S.a.unlocked = false; S.a.secret = ''; SS.del('waynah.adm'); },
   'a-sel': function (el) { S.a.sel = el.dataset.v; },
-  'a-demo': function () { var on = D.config.demoShops !== false; Store.set('config/main', { demoShops: !on }); toast(on ? 'وقفنا المحلات التجريبية.' : 'شغّلنا المحلات التجريبية.'); },
+  'a-demo': function () { var on = D.config.demoShops !== false; adminDo(function (sec) { return Api.adminDemo(sec, !on); }, function () { toast(on ? 'وقفنا المحلات التجريبية.' : 'شغّلنا المحلات التجريبية.'); }); },
   'a-wipe-ask': function () { S.a.confirm = true; },
   'a-wipe-cancel': function () { S.a.confirm = false; },
-  'a-wipe': function () { D.requests.forEach(function (r) { Store.del('requests/' + r.id); }); D.shops.forEach(function (s) { Store.del('shops/' + s.id); }); S.a.confirm = false; toast('مسحنا بيانات التجربة.'); }
+  'a-wipe-test': function () { adminDo(function (sec) { return Api.adminWipe(sec, 'test'); }, function (r) { toast('مسحنا ' + (r.data.requests || 0) + ' طلب اختبار.'); }); },
+  'a-wipe': function () { S.a.confirm = false; adminDo(function (sec) { return Api.adminWipe(sec, 'all', 'WIPE-ALL'); }, function (r) { toast('مسحنا كل البيانات: ' + (r.data.requests || 0) + ' طلب و' + (r.data.shops || 0) + ' محل.'); }); }
 };
 
 document.addEventListener('click', function (ev) {
@@ -2086,10 +2386,16 @@ document.addEventListener('submit', function (ev) {
   if (f === 's-msg') shopSend(S.s.draft);
   if (f === 'a-unlock') {
     var a = S.a;
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email.trim())) a.err = 'اكتب بريد صحيح.';
-    else if (a.pin !== '0000') { a.err = 'الرمز غلط. هذي اللوحة للفريق بس.'; a.pin = ''; }
-    else { a.err = ''; a.unlocked = true; a.tab = { CFO: 'shops', COO: 'shops', CSO: 'shops', CHRO: 'chats' }[a.role] || 'overview'; }
-    render();
+    if (a.busy) return;
+    if (!a.secret) { a.err = 'اكتب السر أول.'; render(); return; }
+    if (!Store.remote) { a.err = 'اللوحة تشتغل على الموقع الحي بس.'; render(); return; }
+    a.busy = true; a.err = ''; render();
+    Api.adminCheck(a.secret).then(function (r) {
+      a.busy = false;
+      if (r.ok) { a.err = ''; a.unlocked = true; SS.set('waynah.adm', a.secret); a.tab = { CFO: 'shops', COO: 'shops', CSO: 'shops', CHRO: 'chats' }[a.role] || 'overview'; }
+      else { a.err = Api.errText(r.code, 'admin', 'admin'); a.secret = ''; }
+      render();
+    });
   }
 });
 document.addEventListener('input', function (ev) {
@@ -2142,8 +2448,9 @@ if (window.Splash) Splash.step(22);
 GL_P.then(function (ok) { if (window.Splash) { Splash.step(74); if (!ok) Splash.done(); } if (!ok) MapCtl.failed = true; render(); });
 Store.init().then(function () {
   if (window.Splash) Splash.step(50);
+  if (S.a.unlocked && Store.remote) Api.adminCheck(S.a.secret).then(function (r) { if (!r.ok && r.code !== 'offline' && r.code !== 'unknown') { S.a.unlocked = false; S.a.secret = ''; SS.del('waynah.adm'); render(); } });
   var pending = 3, done = function () { if (--pending <= 0 && !D.ready) { D.ready = true; if (window.Splash && (SNAP_OK || !document.body.classList.contains('mapmode'))) Splash.done(); } render(); };
-  Store.watchCol('requests', function (list) { var before = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; D.requests = list; var after = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; if (after > before && S.d.view === 'offers') { Buddy.jump(); Buddy.say(Buddy.line('got')); if (before === 0) confetti(); } if (S.d.view === 'chat' || S.s.view === 'chat') S._scroll = true; done(); });
+  Store.watchCol('requests', function (list) { var before = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; D.requests = list; var after = S.d.rid ? offersOf(reqById(S.d.rid)).length : 0; if (after > before && S.d.view === 'offers') { Buddy.jump(); Buddy.say(Buddy.line('got')); if (before === 0) confetti(); } if (S.d.view === 'chat' || S.s.view === 'chat') S._scroll = true; Api.claimLegacy(); done(); });
   Store.watchCol('shops', function (list) { D.shops = list; done(); });
   Store.watchDoc('config/main', function (c) { D.config = c || { demoShops: true }; done(); });
 });
